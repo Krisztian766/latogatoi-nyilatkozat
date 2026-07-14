@@ -18,6 +18,18 @@ if (!$s || $s['status'] !== 'signed') { header('Location: /admin/documents.php')
 $logoPath = __DIR__ . '/../assets/logo.png';
 $logoB64  = file_exists($logoPath) ? 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath)) : '';
 $docDate  = date('Y-m-d');
+
+$attachmentB64  = null;
+$attachmentIsImg = false;
+if (!empty($s['doc_file_path'])) {
+    $attachmentPath = __DIR__ . '/../' . $s['doc_file_path'];
+    $ext = strtolower(pathinfo($attachmentPath, PATHINFO_EXTENSION));
+    if (in_array($ext, ['png', 'jpg', 'jpeg'], true) && file_exists($attachmentPath)) {
+        $mime = $ext === 'png' ? 'image/png' : 'image/jpeg';
+        $attachmentB64   = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($attachmentPath));
+        $attachmentIsImg = true;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="hu">
@@ -99,6 +111,9 @@ $docDate  = date('Y-m-d');
 <div class="print-bar">
     <a href="/admin/document_send_view.php?id=<?= $s['id'] ?>"><?= icon('arrow-left') ?> Vissza</a>
     <button onclick="window.print()"><?= icon('download') ?> PDF mentése</button>
+    <?php if (!empty($s['doc_file_path'])): ?>
+        <a href="/<?= e($s['doc_file_path']) ?>" target="_blank"><?= icon('paperclip') ?> Melléklet megnyitása</a>
+    <?php endif; ?>
     <span>Nyomtatásnál válassza: <strong>Mentés PDF-ként</strong> &nbsp;|&nbsp; Margók: <strong>Nincs / None</strong></span>
 </div>
 
@@ -123,12 +138,26 @@ $docDate  = date('Y-m-d');
             <?php if (!empty($s['doc_content'])): ?>
                 <?= nl2br(e($s['doc_content'])) ?>
             <?php else: ?>
-                <p style="color:#9CA3AF;font-style:italic">
+                <p style="color:#6B7280;font-style:italic">
                     A dokumentum melléklet formájában lett kiküldve
-                    (<?= e(basename($s['doc_file_path'] ?? '')) ?>), külön tekinthető meg.
+                    (<?= e(basename($s['doc_file_path'] ?? '')) ?>).
                 </p>
             <?php endif; ?>
         </div>
+
+        <?php if ($attachmentIsImg): ?>
+            <div class="section-head">Melléklet</div>
+            <img src="<?= $attachmentB64 ?>" alt="Melléklet" style="display:block;max-width:100%;border:1px solid #E2E8F0;border-radius:4px">
+        <?php elseif (!empty($s['doc_file_path'])): ?>
+            <div class="section-head">Melléklet</div>
+            <p style="font-size:9.5pt">
+                A melléklet (<?= e(basename($s['doc_file_path'])) ?>) ebbe a PDF-be nem ágyazódik be automatikusan
+                &ndash; az alábbi linken tekinthető meg és tölthető le külön:<br>
+                <a href="<?= e(SITE_URL . '/' . $s['doc_file_path']) ?>" style="color:#1E3A6E;font-weight:700">
+                    <?= e(SITE_URL . '/' . $s['doc_file_path']) ?>
+                </a>
+            </p>
+        <?php endif; ?>
 
         <div class="section-head">Aláírás</div>
         <div class="sign-row">
