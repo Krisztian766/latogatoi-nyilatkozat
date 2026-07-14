@@ -6,7 +6,7 @@ $token = $_GET['token'] ?? '';
 $db    = getDB();
 
 $stmt = $db->prepare('
-    SELECT s.*, d.title AS doc_title, d.content AS doc_content
+    SELECT s.*, d.title AS doc_title, d.content AS doc_content, d.file_path AS doc_file_path
     FROM document_sends s
     JOIN documents d ON d.id = s.document_id
     WHERE s.token = ?
@@ -61,11 +61,22 @@ $csrf = generateCsrf();
             <div class="alert alert-success">
                 &#10003; Ezt a dokumentumot már aláírta <?= e($s['signed_at']) ?>-kor. Köszönjük!
             </div>
+        <?php elseif ($s['status'] === 'revoked'): ?>
+            <div class="alert alert-error">
+                Ez az aláírási link vissza lett vonva, már nem érvényes. Kérjük, vegye fel a kapcsolatot a küldővel.
+            </div>
         <?php else: ?>
 
         <p class="section-label">Dokumentum</p>
         <h2 style="margin-bottom:1rem"><?= e($s['doc_title']) ?></h2>
-        <div class="declaration-box"><?= nl2br(e($s['doc_content'])) ?></div>
+        <?php if (!empty($s['doc_content'])): ?>
+            <div class="declaration-box"><?= nl2br(e($s['doc_content'])) ?></div>
+        <?php endif; ?>
+        <?php if (!empty($s['doc_file_path'])): ?>
+            <p style="margin-top:1rem">
+                <a href="/<?= e($s['doc_file_path']) ?>" target="_blank" class="btn btn-secondary">&#128206; Melléklet megtekintése</a>
+            </p>
+        <?php endif; ?>
 
         <?php if ($error): ?>
             <div class="alert alert-error" style="margin-top:1.5rem"><?= e($error) ?></div>
@@ -84,6 +95,7 @@ $csrf = generateCsrf();
                     <button type="button" id="clearSig" class="btn-clear">&#x2715; Törlés</button>
                 </div>
                 <p class="sig-hint">Kérjük, írja alá ujjával vagy egérrel.</p>
+                <p class="alert alert-error" id="sigError" style="display:none;margin-top:.6rem">Kérjük, írja alá a dokumentumot!</p>
             </div>
 
             <button type="submit" class="btn btn-primary btn-full" id="submitBtn">

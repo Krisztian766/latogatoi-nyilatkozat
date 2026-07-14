@@ -41,6 +41,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 logAudit('login_failed', null, $username);
                 $error = 'Hibás felhasználónév vagy jelszó! / Invalid username or password!';
+
+                // Alert the admin once, exactly when this failed attempt triggers the lockout
+                if ($recentFailures + 1 === $maxAttempts) {
+                    $alertEmail = getSetting('notification_email');
+                    if ($alertEmail) {
+                        sendSmtpEmail(
+                            $alertEmail,
+                            'Figyelmeztetés: ismételt sikertelen admin bejelentkezés',
+                            "Több egymást követő sikertelen bejelentkezési kísérlet történt az admin felületre.\n\n"
+                            . "IP cím: {$ip}\n"
+                            . "Próbált felhasználónév: {$username}\n"
+                            . "Az adott IP a következő {$lockMinutes} percben zárolva van.\n"
+                        );
+                    }
+                }
             }
         }
     } catch (Exception $e) {

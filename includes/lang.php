@@ -22,6 +22,7 @@ return [
         'placeholder_company' => 'Cég neve',
         'placeholder_contact' => 'Kapcsolattartó neve',
         'lang_label'          => 'Nyelv',
+        'auto_reset'          => 'Új nyilatkozat automatikusan indul {s} másodperc múlva…',
     ],
     'en' => [
         'section_personal'    => 'Personal Information',
@@ -45,5 +46,6 @@ return [
         'placeholder_company' => 'Company name',
         'placeholder_contact' => 'Contact person\'s name',
         'lang_label'          => 'Language',
+        'auto_reset'          => 'A new form will start automatically in {s} seconds…',
     ],
 ];

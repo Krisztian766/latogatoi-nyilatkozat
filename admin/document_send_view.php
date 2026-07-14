@@ -5,7 +5,7 @@ requireAdmin();
 $id   = (int)($_GET['id'] ?? 0);
 $db   = getDB();
 $stmt = $db->prepare('
-    SELECT s.*, d.title AS doc_title, d.content AS doc_content
+    SELECT s.*, d.title AS doc_title, d.content AS doc_content, d.file_path AS doc_file_path
     FROM document_sends s
     JOIN documents d ON d.id = s.document_id
     WHERE s.id = ?
@@ -76,8 +76,14 @@ $statusBadge = [
             <?php endif; ?>
         </table>
 
-        <p class="section-label" style="margin-top:1.5rem">Dokumentum szövege</p>
-        <div class="declaration-box"><?= nl2br(e($s['doc_content'])) ?></div>
+        <?php if (!empty($s['doc_content'])): ?>
+            <p class="section-label" style="margin-top:1.5rem">Dokumentum szövege</p>
+            <div class="declaration-box"><?= nl2br(e($s['doc_content'])) ?></div>
+        <?php endif; ?>
+        <?php if (!empty($s['doc_file_path'])): ?>
+            <p class="section-label" style="margin-top:1.5rem">Melléklet</p>
+            <a href="/<?= e($s['doc_file_path']) ?>" target="_blank" class="btn btn-secondary">&#128206; Melléklet megnyitása</a>
+        <?php endif; ?>
 
         <div class="signature-display" style="margin-top:1.5rem">
             <p><strong>Aláírás:</strong></p>

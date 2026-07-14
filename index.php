@@ -29,6 +29,11 @@ for ($i = 1; $i <= 4; $i++) {
     if (trim($p)) $para[] = $p;
 }
 
+// Contact-person autocomplete. Company names are deliberately NOT offered here —
+// this page is public, and listing prior visitor companies would leak business
+// relationships to anyone viewing the page source.
+$knownContacts = getDB()->query("SELECT DISTINCT contact FROM declarations WHERE contact <> '' ORDER BY contact LIMIT 200")->fetchAll(PDO::FETCH_COLUMN);
+
 $error = '';
 if (isset($_GET['error'])) {
     $map = [
@@ -78,6 +83,21 @@ $langParam = '?lang=' . $lang;
             <p style="text-align:center;margin-top:1.5rem">
                 <a href="/<?= $langParam ?>" class="btn btn-primary"><?= e($t['btn_new']) ?></a>
             </p>
+            <p id="autoResetHint" style="text-align:center;margin-top:1rem;font-size:.82rem;color:var(--gray-500)"></p>
+            <script>
+            (function () {
+                var seconds  = 8;
+                var el       = document.getElementById('autoResetHint');
+                var template = <?= json_encode($t['auto_reset']) ?>;
+                function tick() {
+                    el.textContent = template.replace('{s}', seconds);
+                    if (seconds <= 0) { window.location.href = '/<?= $langParam ?>'; return; }
+                    seconds--;
+                    setTimeout(tick, 1000);
+                }
+                tick();
+            })();
+            </script>
         <?php else: ?>
 
         <?php if ($error): ?>
@@ -106,9 +126,14 @@ $langParam = '?lang=' . $lang;
             </div>
             <div class="form-group">
                 <label for="contact"><?= e($fContact) ?> <span class="required">*</span></label>
-                <input type="text" id="contact" name="contact" required
+                <input type="text" id="contact" name="contact" required list="contactList"
                        placeholder="<?= e($t['placeholder_contact']) ?>"
                        value="<?= e($_GET['contact'] ?? '') ?>">
+                <datalist id="contactList">
+                    <?php foreach ($knownContacts as $c): ?>
+                        <option value="<?= e($c) ?>">
+                    <?php endforeach; ?>
+                </datalist>
             </div>
 
             <p class="section-label"><?= e($t['section_declaration']) ?></p>
@@ -130,6 +155,7 @@ $langParam = '?lang=' . $lang;
                     <button type="button" id="clearSig" class="btn-clear">&#x2715; <?= e($t['btn_clear']) ?></button>
                 </div>
                 <p class="sig-hint"><?= e($t['sig_hint']) ?></p>
+                <p class="alert alert-error" id="sigError" style="display:none;margin-top:.6rem"><?= e($t['err_signature']) ?></p>
             </div>
 
             <?php if ($gdprLabel || $gdprNotice): ?>

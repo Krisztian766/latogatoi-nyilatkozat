@@ -5,7 +5,7 @@ requireAdmin();
 $id   = (int)($_GET['id'] ?? 0);
 $db   = getDB();
 $stmt = $db->prepare('
-    SELECT s.*, d.title AS doc_title, d.content AS doc_content
+    SELECT s.*, d.title AS doc_title, d.content AS doc_content, d.file_path AS doc_file_path
     FROM document_sends s
     JOIN documents d ON d.id = s.document_id
     WHERE s.id = ?
@@ -119,7 +119,16 @@ $docDate  = date('Y-m-d');
         </table>
 
         <div class="section-head">Dokumentum szövege</div>
-        <div class="decl-box"><?= nl2br(e($s['doc_content'])) ?></div>
+        <div class="decl-box">
+            <?php if (!empty($s['doc_content'])): ?>
+                <?= nl2br(e($s['doc_content'])) ?>
+            <?php else: ?>
+                <p style="color:#9CA3AF;font-style:italic">
+                    A dokumentum melléklet formájában lett kiküldve
+                    (<?= e(basename($s['doc_file_path'] ?? '')) ?>), külön tekinthető meg.
+                </p>
+            <?php endif; ?>
+        </div>
 
         <div class="section-head">Aláírás</div>
         <div class="sign-row">

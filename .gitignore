@@ -1,2 +1,4 @@
 includes/db.php
 *.bak
+uploads/documents/*
+!uploads/documents/.htaccess

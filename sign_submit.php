@@ -18,7 +18,7 @@ if (!verifyCsrf($_POST['csrf_token'] ?? '')) {
     exit;
 }
 
-if ($s['status'] === 'signed') {
+if ($s['status'] === 'signed' || $s['status'] === 'revoked') {
     header('Location: /sign.php?token=' . urlencode($token));
     exit;
 }

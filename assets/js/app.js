@@ -38,9 +38,16 @@ document.addEventListener('DOMContentLoaded', function () {
     canvas.addEventListener('touchstart', function (e) { e.preventDefault(); }, { passive: false });
     canvas.addEventListener('touchmove',  function (e) { e.preventDefault(); }, { passive: false });
 
+    var sigError = document.getElementById('sigError');
+    function hideSigError() { if (sigError) sigError.style.display = 'none'; }
+    function showSigError() { if (sigError) sigError.style.display = 'block'; }
+
+    canvas.addEventListener('mousedown',  hideSigError);
+    canvas.addEventListener('touchstart', hideSigError);
+
     var clearBtn = document.getElementById('clearSig');
     if (clearBtn) {
-        clearBtn.addEventListener('click', function () { pad.clear(); });
+        clearBtn.addEventListener('click', function () { pad.clear(); hideSigError(); });
     }
 
     // Disable a submit button and show a busy label to prevent double-submits
@@ -59,12 +66,31 @@ document.addEventListener('DOMContentLoaded', function () {
         visitorForm.addEventListener('submit', function (e) {
             if (pad.isEmpty()) {
                 e.preventDefault();
-                alert('Kérjük, írja alá a nyilatkozatot!\nPlease sign the declaration!');
+                showSigError();
                 return false;
             }
+            hideSigError();
             document.getElementById('signatureData').value = pad.toDataURL('image/png');
             lockSubmit(visitorForm);
         });
+
+        // Privacy/idle reset: clear the form if left filled-but-unsubmitted on a shared kiosk
+        var idleTimer;
+        var idleTimeoutMs = 60000;
+        function resetIdleTimer() {
+            clearTimeout(idleTimer);
+            idleTimer = setTimeout(function () {
+                visitorForm.reset();
+                pad.clear();
+                hideSigError();
+                var noticeBox = document.getElementById('gdprNoticeText');
+                if (noticeBox) noticeBox.style.display = 'none';
+            }, idleTimeoutMs);
+        }
+        ['input', 'change', 'mousedown', 'touchstart'].forEach(function (evt) {
+            visitorForm.addEventListener(evt, resetIdleTimer);
+        });
+        resetIdleTimer();
     }
 
     // Admin new form – signature optional, but capture if drawn
@@ -83,9 +109,10 @@ document.addEventListener('DOMContentLoaded', function () {
         signForm.addEventListener('submit', function (e) {
             if (pad.isEmpty()) {
                 e.preventDefault();
-                alert('Kérjük, írja alá a dokumentumot!');
+                showSigError();
                 return false;
             }
+            hideSigError();
             document.getElementById('signatureData').value = pad.toDataURL('image/png');
             lockSubmit(signForm);
         });

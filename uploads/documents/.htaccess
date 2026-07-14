@@ -1,0 +1,3 @@
+<FilesMatch "\.(php|phtml|php[0-9]|phar|cgi|pl)$">
+    Deny from all
+</FilesMatch>

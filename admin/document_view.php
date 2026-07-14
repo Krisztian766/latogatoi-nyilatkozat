@@ -13,6 +13,16 @@ if (!$doc) { header('Location: /admin/documents.php'); exit; }
 $error   = '';
 $success = '';
 
+function sendSigningEmail(string $title, string $recipientName, string $recipientEmail, string $token): bool {
+    $signUrl = SITE_URL . '/sign.php?token=' . $token;
+    $subject = 'Aláírásra váró dokumentum: ' . $title;
+    $body  = "Kedves {$recipientName}!\n\n";
+    $body .= "Az alábbi dokumentum aláírásra vár:\n\"{$title}\"\n\n";
+    $body .= "Az aláíráshoz kattintson az alábbi linkre:\n{$signUrl}\n\n";
+    $body .= "Üdvözlettel,\n" . getSetting('company_name', 'Látogatói Rendszer');
+    return sendSmtpEmail($recipientEmail, $subject, $body);
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send_document'])) {
     if (!verifyCsrf($_POST['csrf_token'] ?? '')) {
         $error = 'Érvénytelen kérés!';
@@ -26,21 +36,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send_document'])) {
             $token = bin2hex(random_bytes(32));
             $db->prepare('INSERT INTO document_sends (document_id, recipient_name, recipient_email, token) VALUES (?, ?, ?, ?)')
                ->execute([$id, $recipientName, $recipientEmail, $token]);
-            $sendId = $db->lastInsertId();
 
-            $signUrl = SITE_URL . '/sign.php?token=' . $token;
-            $subject = 'Aláírásra váró dokumentum: ' . $doc['title'];
-            $body  = "Kedves {$recipientName}!\n\n";
-            $body .= "Az alábbi dokumentum aláírásra vár:\n\"{$doc['title']}\"\n\n";
-            $body .= "Az aláíráshoz kattintson az alábbi linkre:\n{$signUrl}\n\n";
-            $body .= "Üdvözlettel,\n" . getSetting('company_name', 'Látogatói Rendszer');
-
-            $sent = sendSmtpEmail($recipientEmail, $subject, $body);
+            $sent = sendSigningEmail($doc['title'], $recipientName, $recipientEmail, $token);
             logAudit('document_send', $id, "{$recipientName} <{$recipientEmail}>" . ($sent ? '' : ' — EMAIL KÜLDÉS SIKERTELEN'));
 
             $success = $sent
                 ? "Dokumentum kiküldve: {$recipientEmail}"
                 : "A címzett rögzítve, de az email küldése sikertelen volt! Ellenőrizze az email beállításokat.";
+        }
+    }
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['resend_id'])) {
+    if (!verifyCsrf($_POST['csrf_token'] ?? '')) {
+        $error = 'Érvénytelen kérés!';
+    } else {
+        $resendId = (int)$_POST['resend_id'];
+        $sendStmt = $db->prepare('SELECT * FROM document_sends WHERE id = ? AND document_id = ?');
+        $sendStmt->execute([$resendId, $id]);
+        $send = $sendStmt->fetch();
+
+        if ($send && $send['status'] !== 'signed' && $send['status'] !== 'revoked') {
+            $sent = sendSigningEmail($doc['title'], $send['recipient_name'], $send['recipient_email'], $send['token']);
+            logAudit('document_resend', $id, "{$send['recipient_name']} <{$send['recipient_email']}>" . ($sent ? '' : ' — EMAIL KÜLDÉS SIKERTELEN'));
+            $success = $sent ? "Link újraküldve: {$send['recipient_email']}" : 'Az email küldése sikertelen volt!';
+        } else {
+            $error = 'Ez a küldés már nem küldhető újra (aláírva vagy visszavonva).';
+        }
+    }
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['revoke_id'])) {
+    if (!verifyCsrf($_POST['csrf_token'] ?? '')) {
+        $error = 'Érvénytelen kérés!';
+    } else {
+        $revokeId = (int)$_POST['revoke_id'];
+        $upd = $db->prepare("UPDATE document_sends SET status = 'revoked' WHERE id = ? AND document_id = ? AND status != 'signed'");
+        $upd->execute([$revokeId, $id]);
+        if ($upd->rowCount() > 0) {
+            logAudit('document_revoke', $id, "send #{$revokeId}");
+            $success = 'A link visszavonva, a címzett a továbbiakban nem tudja aláírni.';
+        } else {
+            $error = 'Ez a küldés nem vonható vissza (már aláírták, vagy nem található).';
         }
     }
 }
@@ -52,9 +89,10 @@ $sends = $sends->fetchAll();
 $csrf = generateCsrf();
 
 $statusBadge = [
-    'sent'   => ['badge-gray', '&#9993; Kiküldve'],
-    'viewed' => ['badge-warn', '&#128065; Megnyitva'],
-    'signed' => ['badge-ok',   '&#10003; Aláírva'],
+    'sent'    => ['badge-gray', '&#9993; Kiküldve'],
+    'viewed'  => ['badge-warn', '&#128065; Megnyitva'],
+    'signed'  => ['badge-ok',   '&#10003; Aláírva'],
+    'revoked' => ['badge-warn', '&#8856; Visszavonva'],
 ];
 ?>
 <!DOCTYPE html>
@@ -82,8 +120,14 @@ $statusBadge = [
     <?php if ($success): ?><div class="alert alert-success"><?= e($success) ?></div><?php endif; ?>
 
     <div class="form-card" style="margin-bottom:1.5rem">
-        <p class="section-label">Dokumentum szövege</p>
-        <div class="declaration-box"><?= nl2br(e($doc['content'])) ?></div>
+        <?php if (!empty($doc['content'])): ?>
+            <p class="section-label">Dokumentum szövege</p>
+            <div class="declaration-box"><?= nl2br(e($doc['content'])) ?></div>
+        <?php endif; ?>
+        <?php if (!empty($doc['file_path'])): ?>
+            <p class="section-label" style="<?= empty($doc['content']) ? '' : 'margin-top:1.25rem' ?>">Melléklet</p>
+            <a href="/<?= e($doc['file_path']) ?>" target="_blank" class="btn btn-secondary">&#128206; Melléklet megnyitása</a>
+        <?php endif; ?>
     </div>
 
     <div class="form-card" style="max-width:520px;margin-bottom:1.75rem">
@@ -128,6 +172,19 @@ $statusBadge = [
                     <td><?= $s['signed_at'] ? e(substr($s['signed_at'], 0, 16)) : '–' ?></td>
                     <td class="actions">
                         <a href="/admin/document_send_view.php?id=<?= $s['id'] ?>" class="btn btn-sm">&#128065; Megnyit</a>
+                        <?php if (!in_array($s['status'], ['signed', 'revoked'], true)): ?>
+                            <form method="POST" style="display:inline">
+                                <input type="hidden" name="csrf_token" value="<?= e($csrf) ?>">
+                                <input type="hidden" name="resend_id" value="<?= $s['id'] ?>">
+                                <button type="submit" class="btn btn-sm btn-secondary">&#8635; Újraküldés</button>
+                            </form>
+                            <form method="POST" style="display:inline"
+                                  onsubmit="return confirm('Biztosan visszavonja ezt a linket? A címzett a továbbiakban nem tudja aláírni.')">
+                                <input type="hidden" name="csrf_token" value="<?= e($csrf) ?>">
+                                <input type="hidden" name="revoke_id" value="<?= $s['id'] ?>">
+                                <button type="submit" class="btn btn-sm btn-danger">&#8856; Visszavonás</button>
+                            </form>
+                        <?php endif; ?>
                     </td>
                 </tr>
                 <?php endforeach; ?>
