@@ -126,6 +126,11 @@ function verifyHash(array $row): bool {
     return hash_equals($expected, $row['data_hash'] ?? '');
 }
 
+function computeDocHash(int $documentId, string $recipientEmail, string $signatureData): string {
+    $payload = implode('||', [$documentId, $recipientEmail, substr($signatureData, 0, 200)]);
+    return hash('sha256', $payload);
+}
+
 function logAudit(string $action, ?int $recordId = null, string $details = ''): void {
     try {
         if (session_status() === PHP_SESSION_NONE) session_start();

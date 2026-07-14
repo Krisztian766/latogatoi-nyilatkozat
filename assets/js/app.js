@@ -43,6 +43,16 @@ document.addEventListener('DOMContentLoaded', function () {
         clearBtn.addEventListener('click', function () { pad.clear(); });
     }
 
+    // Disable a submit button and show a busy label to prevent double-submits
+    function lockSubmit(form) {
+        var btn = form.querySelector('button[type="submit"]');
+        if (btn) {
+            btn.disabled = true;
+            btn.dataset.originalText = btn.innerHTML;
+            btn.innerHTML = 'Küldés…';
+        }
+    }
+
     // Public visitor form – signature required
     var visitorForm = document.getElementById('declarationForm');
     if (visitorForm) {
@@ -53,6 +63,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 return false;
             }
             document.getElementById('signatureData').value = pad.toDataURL('image/png');
+            lockSubmit(visitorForm);
         });
     }
 
@@ -63,6 +74,20 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!pad.isEmpty()) {
                 document.getElementById('signatureData').value = pad.toDataURL('image/png');
             }
+        });
+    }
+
+    // Document signing form – signature required
+    var signForm = document.getElementById('signForm');
+    if (signForm) {
+        signForm.addEventListener('submit', function (e) {
+            if (pad.isEmpty()) {
+                e.preventDefault();
+                alert('Kérjük, írja alá a dokumentumot!');
+                return false;
+            }
+            document.getElementById('signatureData').value = pad.toDataURL('image/png');
+            lockSubmit(signForm);
         });
     }
 });
