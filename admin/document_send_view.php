@@ -24,11 +24,12 @@ if (!empty($s['data_hash'])) {
 }
 
 $statusBadge = [
-    'sent'   => ['badge-gray', '&#9993; Kiküldve, még nem nyitották meg'],
-    'viewed' => ['badge-warn', '&#128065; Megnyitva, még nincs aláírva'],
-    'signed' => ['badge-ok',   '&#10003; Aláírva'],
+    'sent'    => ['badge-gray', 'mail',  'Kiküldve, még nem nyitották meg'],
+    'viewed'  => ['badge-warn', 'eye',   'Megnyitva, még nincs aláírva'],
+    'signed'  => ['badge-ok',   'check', 'Aláírva'],
+    'revoked' => ['badge-warn', 'ban',   'Visszavonva'],
 ];
-[$cls, $label] = $statusBadge[$s['status']];
+[$cls, $iconName, $label] = $statusBadge[$s['status']];
 ?>
 <!DOCTYPE html>
 <html lang="hu">
@@ -44,9 +45,9 @@ $statusBadge = [
 
 <div class="admin-content">
     <div style="margin-bottom:1rem;display:flex;gap:.5rem;flex-wrap:wrap;align-items:center">
-        <a href="/admin/document_view.php?id=<?= $s['document_id'] ?>" class="btn btn-secondary">&larr; Vissza a dokumentumhoz</a>
+        <a href="/admin/document_view.php?id=<?= $s['document_id'] ?>" class="btn btn-secondary"><?= icon('arrow-left') ?> Vissza a dokumentumhoz</a>
         <?php if ($s['status'] === 'signed'): ?>
-            <a href="/admin/document_pdf.php?id=<?= $s['id'] ?>" target="_blank" class="btn btn-primary">&#128438; PDF letöltés</a>
+            <a href="/admin/document_pdf.php?id=<?= $s['id'] ?>" target="_blank" class="btn btn-primary"><?= icon('download') ?> PDF letöltés</a>
         <?php endif; ?>
     </div>
 
@@ -54,11 +55,11 @@ $statusBadge = [
         <h2 style="text-align:center;margin-bottom:1.5rem"><?= e($s['doc_title']) ?></h2>
 
         <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-bottom:1.25rem">
-            <span class="compliance-badge <?= $cls ?>"><?= $label ?></span>
+            <span class="compliance-badge <?= $cls ?>"><?= icon($iconName) ?> <?= $label ?></span>
             <?php if ($hashOk === true): ?>
-                <span class="compliance-badge badge-ok">&#10003; Adat-integritás: sértetlen</span>
+                <span class="compliance-badge badge-ok"><?= icon('check') ?> Adat-integritás: sértetlen</span>
             <?php elseif ($hashOk === false): ?>
-                <span class="compliance-badge badge-warn">&#9888; Adat-integritás: MÓDOSÍTOTT!</span>
+                <span class="compliance-badge badge-warn"><?= icon('warning') ?> Adat-integritás: MÓDOSÍTOTT!</span>
             <?php endif; ?>
         </div>
 
@@ -82,7 +83,7 @@ $statusBadge = [
         <?php endif; ?>
         <?php if (!empty($s['doc_file_path'])): ?>
             <p class="section-label" style="margin-top:1.5rem">Melléklet</p>
-            <a href="/<?= e($s['doc_file_path']) ?>" target="_blank" class="btn btn-secondary">&#128206; Melléklet megnyitása</a>
+            <a href="/<?= e($s['doc_file_path']) ?>" target="_blank" class="btn btn-secondary"><?= icon('paperclip') ?> Melléklet megnyitása</a>
         <?php endif; ?>
 
         <div class="signature-display" style="margin-top:1.5rem">

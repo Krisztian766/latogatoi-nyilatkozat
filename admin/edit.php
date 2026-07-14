@@ -58,7 +58,7 @@ $csrf = generateCsrf();
     <?php include __DIR__ . '/partials/nav.php'; ?>
 
     <div class="admin-content">
-        <a href="/admin/view.php?id=<?= $id ?>" class="btn btn-secondary">&larr; Vissza / Back</a>
+        <a href="/admin/view.php?id=<?= $id ?>" class="btn btn-secondary"><?= icon('arrow-left') ?> Vissza / Back</a>
         <h2 style="margin:1rem 0">Szerkesztés / Edit – #<?= $id ?></h2>
 
         <?php if ($error): ?><div class="alert alert-error"><?= e($error) ?></div><?php endif; ?>
@@ -83,7 +83,7 @@ $csrf = generateCsrf();
                     <label>Dátum / Date:</label>
                     <input type="date" name="visit_date" value="<?= e($d['visit_date']) ?>">
                 </div>
-                <button type="submit" class="btn btn-primary">&#10003; Mentés / Save</button>
+                <button type="submit" class="btn btn-primary"><?= icon('check') ?> Mentés / Save</button>
                 <a href="/admin/view.php?id=<?= $id ?>" class="btn btn-secondary">Mégse / Cancel</a>
             </form>
         </div>

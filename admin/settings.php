@@ -118,7 +118,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <?php include __DIR__ . '/partials/nav.php'; ?>
 
 <div class="admin-content">
-    <h2 style="margin-bottom:1.5rem">&#9881; Beállítások / Settings</h2>
+    <h2 style="margin-bottom:1.5rem">Beállítások / Settings</h2>
 
     <?php if ($error):   ?><div class="alert alert-error"><?= e($error) ?></div><?php endif; ?>
     <?php if ($success): ?><div class="alert alert-success"><?= e($success) ?></div><?php endif; ?>
@@ -127,12 +127,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <!-- General -->
         <div class="form-card">
-            <h3>&#127968; Általános</h3>
+            <h3>Általános</h3>
             <form method="POST">
                 <div class="lang-tabs-wrap">
                     <div class="lang-tabs">
-                        <button type="button" class="lang-tab active" data-tab="hu-gen">🇭🇺 Magyar</button>
-                        <button type="button" class="lang-tab" data-tab="en-gen">🇬🇧 English</button>
+                        <button type="button" class="lang-tab active" data-tab="hu-gen">Magyar</button>
+                        <button type="button" class="lang-tab" data-tab="en-gen">English</button>
                     </div>
                     <div class="lang-tab-content active" id="tab-hu-gen">
                         <div class="form-group">
@@ -151,13 +151,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <label>Szervezet neve (emailekben):</label>
                     <input type="text" name="company_name" value="<?= e(getSetting('company_name','')) ?>" placeholder="pl. SDS Kft.">
                 </div>
-                <button type="submit" name="save_general" class="btn btn-primary">&#10003; Mentés</button>
+                <button type="submit" name="save_general" class="btn btn-primary"><?= icon('check') ?> Mentés</button>
             </form>
         </div>
 
         <!-- GDPR -->
         <div class="form-card settings-full">
-            <h3>&#128274; GDPR – Adatkezelési beállítások</h3>
+            <h3>GDPR &ndash; Adatkezelési beállítások</h3>
             <form method="POST">
                 <div class="form-group" style="max-width:300px">
                     <label>Adatmegőrzési idő (napokban):</label>
@@ -168,8 +168,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <div class="lang-tabs-wrap" style="margin-top:1.25rem">
                     <div class="lang-tabs">
-                        <button type="button" class="lang-tab active" data-tab="hu-gdpr">🇭🇺 Magyar</button>
-                        <button type="button" class="lang-tab" data-tab="en-gdpr">🇬🇧 English</button>
+                        <button type="button" class="lang-tab active" data-tab="hu-gdpr">Magyar</button>
+                        <button type="button" class="lang-tab" data-tab="en-gdpr">English</button>
                     </div>
                     <div class="lang-tab-content active" id="tab-hu-gdpr">
                         <div class="form-group">
@@ -196,13 +196,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                     </div>
                 </div>
-                <button type="submit" name="save_gdpr" class="btn btn-primary">&#10003; Mentés</button>
+                <button type="submit" name="save_gdpr" class="btn btn-primary"><?= icon('check') ?> Mentés</button>
             </form>
         </div>
 
         <!-- Data retention management -->
         <div class="form-card">
-            <h3>&#128197; Adatmegőrzés kezelése</h3>
+            <h3>Adatmegőrzés kezelése</h3>
             <?php
                 $retDays = (int)getSetting('retention_days','730');
                 $expiredCount = (int)getDB()->query("SELECT COUNT(*) FROM declarations WHERE expires_at < CURDATE()")->fetchColumn();
@@ -212,31 +212,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <tr><th>Megőrzési idő</th><td><strong><?= $retDays ?> nap</strong> (<?= round($retDays/365,1) ?> év)</td></tr>
                 <tr><th>Lejárt rekordok</th>
                     <td><?php if ($expiredCount > 0): ?>
-                        <span style="color:var(--danger);font-weight:700">&#9888; <?= $expiredCount ?> db lejárt</span>
+                        <span style="color:var(--danger);font-weight:700;display:inline-flex;align-items:center;gap:.3rem"><?= icon('warning') ?> <?= $expiredCount ?> db lejárt</span>
                     <?php else: ?>
-                        <span style="color:green">&#10003; Nincs lejárt</span>
+                        <span style="color:var(--success);display:inline-flex;align-items:center;gap:.3rem"><?= icon('check') ?> Nincs lejárt</span>
                     <?php endif; ?></td></tr>
                 <tr><th>30 napon belül lejár</th><td><?= $soonCount ?> db</td></tr>
             </table>
             <?php if ($expiredCount > 0): ?>
             <form method="POST" onsubmit="return confirm('Biztosan törli az összes lejárt nyilatkozatot? Ez visszafordíthatatlan!')">
                 <button type="submit" name="cleanup_expired" class="btn btn-danger">
-                    &#128465; <?= $expiredCount ?> lejárt rekord törlése
+                    <?= icon('trash') ?> <?= $expiredCount ?> lejárt rekord törlése
                 </button>
             </form>
             <?php else: ?>
-            <p style="color:var(--gray);font-size:.88rem">Nincs törlendő rekord.</p>
+            <p style="color:var(--gray-500);font-size:.88rem">Nincs törlendő rekord.</p>
             <?php endif; ?>
         </div>
 
         <!-- Field labels -->
         <div class="form-card">
-            <h3>&#128221; Mezőfeliratok szerkesztése</h3>
+            <h3>Mezőfeliratok szerkesztése</h3>
             <form method="POST">
                 <div class="lang-tabs-wrap">
                     <div class="lang-tabs">
-                        <button type="button" class="lang-tab active" data-tab="hu-fields">🇭🇺 Magyar</button>
-                        <button type="button" class="lang-tab" data-tab="en-fields">🇬🇧 English</button>
+                        <button type="button" class="lang-tab active" data-tab="hu-fields">Magyar</button>
+                        <button type="button" class="lang-tab" data-tab="en-fields">English</button>
                     </div>
                     <div class="lang-tab-content active" id="tab-hu-fields">
                         <div class="form-group"><label>1. mező – Név (HU):</label>
@@ -255,21 +255,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <input type="text" name="field_contact_label_en" value="<?= e(getSetting('field_contact_label_en','Who are you visiting?')) ?>"></div>
                     </div>
                 </div>
-                <button type="submit" name="save_fields" class="btn btn-primary">&#10003; Mentés</button>
+                <button type="submit" name="save_fields" class="btn btn-primary"><?= icon('check') ?> Mentés</button>
             </form>
         </div>
 
         <!-- Declaration text - full width -->
         <div class="form-card settings-full">
-            <h3>&#128196; Nyilatkozat szövegének szerkesztése</h3>
-            <p style="font-size:.82rem;color:var(--gray);margin-bottom:1rem">
+            <h3>Nyilatkozat szövegének szerkesztése</h3>
+            <p style="font-size:.82rem;color:var(--gray-500);margin-bottom:1rem">
                 Minden bekezdés külön szerkeszthető mindkét nyelven. Ha üres, nem jelenik meg.
             </p>
             <form method="POST">
                 <div class="lang-tabs-wrap">
                     <div class="lang-tabs">
-                        <button type="button" class="lang-tab active" data-tab="hu-decl">🇭🇺 Magyar</button>
-                        <button type="button" class="lang-tab" data-tab="en-decl">🇬🇧 English</button>
+                        <button type="button" class="lang-tab active" data-tab="hu-decl">Magyar</button>
+                        <button type="button" class="lang-tab" data-tab="en-decl">English</button>
                     </div>
                     <div class="lang-tab-content active" id="tab-hu-decl">
                         <?php for ($i=1;$i<=4;$i++): ?>
@@ -289,16 +289,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                 </div>
                 <div style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;margin-top:1rem">
-                    <button type="submit" name="save_declaration" class="btn btn-primary">&#10003; Mentés</button>
-                    <a href="/?lang=hu" target="_blank" class="btn btn-ghost">&#128065; Magyar előnézet</a>
-                    <a href="/?lang=en" target="_blank" class="btn btn-ghost">&#128065; English preview</a>
+                    <button type="submit" name="save_declaration" class="btn btn-primary"><?= icon('check') ?> Mentés</button>
+                    <a href="/?lang=hu" target="_blank" class="btn btn-ghost"><?= icon('eye') ?> Magyar előnézet</a>
+                    <a href="/?lang=en" target="_blank" class="btn btn-ghost"><?= icon('eye') ?> English preview</a>
                 </div>
             </form>
         </div>
 
         <!-- Email -->
         <div class="form-card">
-            <h3>&#128140; Email értesítők</h3>
+            <h3>Email értesítők</h3>
 
             <?php
                 $curEmail = getSetting('notification_email');
@@ -306,26 +306,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ?>
             <div class="notify-status">
                 <div class="notify-row">
-                    <span class="notify-label">&#9993; Értesítve (TO):</span>
+                    <span class="notify-label"><?= icon('mail') ?> Értesítve (TO):</span>
                     <?php if ($curEmail): ?>
                         <span class="notify-email"><?= e($curEmail) ?></span>
                         <form method="POST" style="display:inline">
                             <button type="submit" name="clear_email" class="btn-inline-del"
                                     onclick="return confirm('Törli az értesítési email címet?')"
-                                    title="Törlés">&#x2715;</button>
+                                    title="Törlés"><?= icon('x') ?></button>
                         </form>
                     <?php else: ?>
                         <span class="notify-none">– nincs beállítva –</span>
                     <?php endif; ?>
                 </div>
                 <div class="notify-row">
-                    <span class="notify-label">&#9993; Másolat (CC):</span>
+                    <span class="notify-label"><?= icon('mail') ?> Másolat (CC):</span>
                     <?php if ($curCc): ?>
                         <span class="notify-email"><?= e($curCc) ?></span>
                         <form method="POST" style="display:inline">
                             <button type="submit" name="clear_email_cc" class="btn-inline-del"
                                     onclick="return confirm('Törli a CC email címet?')"
-                                    title="Törlés">&#x2715;</button>
+                                    title="Törlés"><?= icon('x') ?></button>
                         </form>
                     <?php else: ?>
                         <span class="notify-none">– nincs beállítva –</span>
@@ -343,16 +343,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <input type="email" name="notification_email_cc" value="<?= e($curCc) ?>" placeholder="vezeto@ceg.hu">
                 </div>
                 <div style="display:flex;gap:.6rem;flex-wrap:wrap">
-                    <button type="submit" name="save_email" class="btn btn-primary">&#10003; Mentés</button>
-                    <button type="submit" name="test_email" class="btn btn-secondary">&#9993; Teszt küldés</button>
+                    <button type="submit" name="save_email" class="btn btn-primary"><?= icon('check') ?> Mentés</button>
+                    <button type="submit" name="test_email" class="btn btn-secondary"><?= icon('mail') ?> Teszt küldés</button>
                 </div>
             </form>
         </div>
 
         <!-- PDF Document settings -->
         <div class="form-card">
-            <h3>&#128438; PDF dokumentum adatok</h3>
-            <p style="font-size:.82rem;color:var(--gray);margin-bottom:1rem">
+            <h3>PDF dokumentum adatok</h3>
+            <p style="font-size:.82rem;color:var(--gray-500);margin-bottom:1rem">
                 A PDF láblécében és fejlécében megjelenő adatok.
             </p>
             <form method="POST">
@@ -374,14 +374,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <label>Jóváhagyta:</label>
                     <input type="text" name="pdf_approved_by" value="<?= e(getSetting('pdf_approved_by','')) ?>" placeholder="Teljes név">
                 </div>
-                <button type="submit" name="save_pdf" class="btn btn-primary">&#10003; Mentés</button>
+                <button type="submit" name="save_pdf" class="btn btn-primary"><?= icon('check') ?> Mentés</button>
             </form>
         </div>
 
         <!-- Password -->
         <div class="form-card">
-            <h3>&#128274; Jelszó módosítása</h3>
-            <p style="font-size:.82rem;color:var(--gray);margin-bottom:1rem">Bejelentkezve: <strong><?= e($_SESSION['admin_username']) ?></strong></p>
+            <h3>Jelszó módosítása</h3>
+            <p style="font-size:.82rem;color:var(--gray-500);margin-bottom:1rem">Bejelentkezve: <strong><?= e($_SESSION['admin_username']) ?></strong></p>
             <form method="POST">
                 <div class="form-group">
                     <label>Jelenlegi jelszó:</label>
@@ -401,15 +401,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <!-- QR + Info -->
         <div class="form-card">
-            <h3>&#128279; QR kód</h3>
-            <p style="font-size:.82rem;color:var(--gray);margin-bottom:.75rem">Nyomtassa ki a bejárathoz:</p>
+            <h3>QR kód</h3>
+            <p style="font-size:.82rem;color:var(--gray-500);margin-bottom:.75rem">Nyomtassa ki a bejárathoz:</p>
             <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=<?= urlencode(SITE_URL) ?>"
                  alt="QR kód" style="border:1px solid #ddd;padding:6px;border-radius:4px;display:block;margin-bottom:.75rem">
             <a href="https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=<?= urlencode(SITE_URL) ?>"
-               target="_blank" class="btn btn-secondary btn-sm">&#8659; Nagy méret letöltése</a>
+               target="_blank" class="btn btn-secondary btn-sm"><?= icon('download') ?> Nagy méret letöltése</a>
 
             <div style="margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid #eee">
-                <h3>&#128202; Rendszer</h3>
+                <h3>Rendszer</h3>
                 <table class="info-table" style="font-size:.82rem">
                     <tr><th>PHP</th><td><?= phpversion() ?></td></tr>
                     <tr><th>Adatbázis</th><td><?= DB_NAME ?></td></tr>

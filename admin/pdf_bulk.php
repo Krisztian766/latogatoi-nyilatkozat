@@ -214,8 +214,8 @@ $logoB64  = file_exists($logoPath) ? 'data:image/png;base64,' . base64_encode(fi
 <body>
 
 <div class="print-bar">
-    <a href="/admin/dashboard.php">&larr; Vissza</a>
-    <button onclick="window.print()">&#128438; PDF mentése</button>
+    <a href="/admin/dashboard.php"><?= icon('arrow-left') ?> Vissza</a>
+    <button onclick="window.print()"><?= icon('download') ?> PDF mentése</button>
     <span><?= count($declarations) ?> nyilatkozat &nbsp;|&nbsp; Nyomtatásnál válassza: <strong>Mentés PDF-ként</strong> &nbsp;|&nbsp; Margók: <strong>Nincs / None</strong></span>
 </div>
 

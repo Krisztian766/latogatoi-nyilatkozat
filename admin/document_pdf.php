@@ -97,8 +97,8 @@ $docDate  = date('Y-m-d');
 <body>
 
 <div class="print-bar">
-    <a href="/admin/document_send_view.php?id=<?= $s['id'] ?>">&larr; Vissza</a>
-    <button onclick="window.print()">&#128438; PDF mentése</button>
+    <a href="/admin/document_send_view.php?id=<?= $s['id'] ?>"><?= icon('arrow-left') ?> Vissza</a>
+    <button onclick="window.print()"><?= icon('download') ?> PDF mentése</button>
     <span>Nyomtatásnál válassza: <strong>Mentés PDF-ként</strong> &nbsp;|&nbsp; Margók: <strong>Nincs / None</strong></span>
 </div>
 

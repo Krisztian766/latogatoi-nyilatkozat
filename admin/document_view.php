@@ -89,10 +89,10 @@ $sends = $sends->fetchAll();
 $csrf = generateCsrf();
 
 $statusBadge = [
-    'sent'    => ['badge-gray', '&#9993; Kiküldve'],
-    'viewed'  => ['badge-warn', '&#128065; Megnyitva'],
-    'signed'  => ['badge-ok',   '&#10003; Aláírva'],
-    'revoked' => ['badge-warn', '&#8856; Visszavonva'],
+    'sent'    => ['badge-gray', 'mail',  'Kiküldve'],
+    'viewed'  => ['badge-warn', 'eye',   'Megnyitva'],
+    'signed'  => ['badge-ok',   'check', 'Aláírva'],
+    'revoked' => ['badge-warn', 'ban',   'Visszavonva'],
 ];
 ?>
 <!DOCTYPE html>
@@ -110,11 +110,11 @@ $statusBadge = [
 <div class="admin-content">
     <div class="page-header">
         <h2><?= e($doc['title']) ?></h2>
-        <a href="/admin/documents.php" class="btn btn-secondary">&larr; Vissza</a>
+        <a href="/admin/documents.php" class="btn btn-secondary"><?= icon('arrow-left') ?> Vissza</a>
     </div>
 
     <?php if (isset($_GET['created'])): ?>
-        <div class="alert alert-success">&#10003; Dokumentum sikeresen létrehozva!</div>
+        <div class="alert alert-success"><?= icon('check') ?> Dokumentum sikeresen létrehozva!</div>
     <?php endif; ?>
     <?php if ($error):   ?><div class="alert alert-error"><?= e($error) ?></div><?php endif; ?>
     <?php if ($success): ?><div class="alert alert-success"><?= e($success) ?></div><?php endif; ?>
@@ -126,7 +126,7 @@ $statusBadge = [
         <?php endif; ?>
         <?php if (!empty($doc['file_path'])): ?>
             <p class="section-label" style="<?= empty($doc['content']) ? '' : 'margin-top:1.25rem' ?>">Melléklet</p>
-            <a href="/<?= e($doc['file_path']) ?>" target="_blank" class="btn btn-secondary">&#128206; Melléklet megnyitása</a>
+            <a href="/<?= e($doc['file_path']) ?>" target="_blank" class="btn btn-secondary"><?= icon('paperclip') ?> Melléklet megnyitása</a>
         <?php endif; ?>
     </div>
 
@@ -142,7 +142,7 @@ $statusBadge = [
                 <label>Címzett email címe <span class="required">*</span></label>
                 <input type="email" name="recipient_email" required placeholder="cimzett@example.com">
             </div>
-            <button type="submit" name="send_document" class="btn btn-primary">&#9993; Kiküldés emailben</button>
+            <button type="submit" name="send_document" class="btn btn-primary"><?= icon('mail') ?> Kiküldés emailben</button>
         </form>
     </div>
 
@@ -163,26 +163,26 @@ $statusBadge = [
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($sends as $s): [$cls, $label] = $statusBadge[$s['status']]; ?>
+                <?php foreach ($sends as $s): [$cls, $iconName, $label] = $statusBadge[$s['status']]; ?>
                 <tr>
                     <td><strong><?= e($s['recipient_name']) ?></strong></td>
                     <td><?= e($s['recipient_email']) ?></td>
-                    <td><span class="compliance-badge <?= $cls ?>"><?= $label ?></span></td>
+                    <td><span class="compliance-badge <?= $cls ?>"><?= icon($iconName) ?> <?= $label ?></span></td>
                     <td><?= e(substr($s['created_at'], 0, 16)) ?></td>
                     <td><?= $s['signed_at'] ? e(substr($s['signed_at'], 0, 16)) : '–' ?></td>
                     <td class="actions">
-                        <a href="/admin/document_send_view.php?id=<?= $s['id'] ?>" class="btn btn-sm">&#128065; Megnyit</a>
+                        <a href="/admin/document_send_view.php?id=<?= $s['id'] ?>" class="btn btn-sm"><?= icon('eye') ?> Megnyit</a>
                         <?php if (!in_array($s['status'], ['signed', 'revoked'], true)): ?>
                             <form method="POST" style="display:inline">
                                 <input type="hidden" name="csrf_token" value="<?= e($csrf) ?>">
                                 <input type="hidden" name="resend_id" value="<?= $s['id'] ?>">
-                                <button type="submit" class="btn btn-sm btn-secondary">&#8635; Újraküldés</button>
+                                <button type="submit" class="btn btn-sm btn-secondary"><?= icon('refresh') ?> Újraküldés</button>
                             </form>
                             <form method="POST" style="display:inline"
                                   onsubmit="return confirm('Biztosan visszavonja ezt a linket? A címzett a továbbiakban nem tudja aláírni.')">
                                 <input type="hidden" name="csrf_token" value="<?= e($csrf) ?>">
                                 <input type="hidden" name="revoke_id" value="<?= $s['id'] ?>">
-                                <button type="submit" class="btn btn-sm btn-danger">&#8856; Visszavonás</button>
+                                <button type="submit" class="btn btn-sm btn-danger"><?= icon('ban') ?> Visszavonás</button>
                             </form>
                         <?php endif; ?>
                     </td>

@@ -69,8 +69,8 @@ $csrf = generateCsrf();
 
 <div class="admin-content">
     <div class="page-header">
-        <h2>&#43; Új dokumentum létrehozása</h2>
-        <a href="/admin/documents.php" class="btn btn-secondary">&larr; Vissza</a>
+        <h2>Új dokumentum létrehozása</h2>
+        <a href="/admin/documents.php" class="btn btn-secondary"><?= icon('arrow-left') ?> Vissza</a>
     </div>
 
     <?php if ($error): ?><div class="alert alert-error"><?= e($error) ?></div><?php endif; ?>
@@ -98,7 +98,7 @@ $csrf = generateCsrf();
             </div>
 
             <div style="margin-top:1.5rem;display:flex;gap:.75rem;flex-wrap:wrap">
-                <button type="submit" class="btn btn-primary">&#10003; Dokumentum létrehozása</button>
+                <button type="submit" class="btn btn-primary"><?= icon('check') ?> Dokumentum létrehozása</button>
                 <a href="/admin/documents.php" class="btn btn-secondary">Mégse</a>
             </div>
         </form>

@@ -27,8 +27,8 @@ $rows = $db->query("
 
 <div class="admin-content">
     <div class="page-header">
-        <h2>&#128196; Dokumentumok</h2>
-        <a href="/admin/document_new.php" class="btn btn-primary">&#43; Új dokumentum</a>
+        <h2>Dokumentumok</h2>
+        <a href="/admin/document_new.php" class="btn btn-primary"><?= icon('plus') ?> Új dokumentum</a>
     </div>
 
     <p style="font-size:.85rem;color:var(--gray-500);margin-bottom:1.25rem">
@@ -61,7 +61,7 @@ $rows = $db->query("
                     <td><?= (int)$r['sent_count'] ?></td>
                     <td><?= (int)$r['signed_count'] ?></td>
                     <td class="actions">
-                        <a href="/admin/document_view.php?id=<?= $r['id'] ?>" class="btn btn-sm">&#128065; Megnyit</a>
+                        <a href="/admin/document_view.php?id=<?= $r['id'] ?>" class="btn btn-sm"><?= icon('eye') ?> Megnyit</a>
                     </td>
                 </tr>
                 <?php endforeach; ?>

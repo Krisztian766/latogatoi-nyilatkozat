@@ -22,26 +22,36 @@ $stmt->execute($params);
 $logs = $stmt->fetchAll();
 
 $actionLabels = [
-    'view'           => ['&#128065;', 'Megtekintés',  '#255aa8'],
-    'edit'           => ['&#9998;',   'Szerkesztés',  '#f39c12'],
-    'delete'         => ['&#128465;', 'Törlés',       '#c0392b'],
-    'login'          => ['&#128274;', 'Bejelentkezés','#27ae60'],
-    'logout'         => ['&#128682;', 'Kijelentkezés','#7f8c8d'],
-    'export'         => ['&#8595;',   'Export',       '#8e44ad'],
-    'cleanup'        => ['&#128465;', 'Auto-törlés',  '#c0392b'],
-    'view_audit_log' => ['&#128203;', 'Audit napló',  '#7f8c8d'],
-    'create'         => ['&#43;',     'Létrehozás',   '#27ae60'],
+    'document_signed'    => ['check',   'Dokumentum aláírva',    '#1e7a4c'],
+    'document_revoke'    => ['ban',     'Link visszavonva',      '#b3261e'],
+    'document_resend'    => ['refresh', 'Link újraküldve',       '#255aa8'],
+    'document_send_view' => ['eye',     'Aláírt válasz nézve',   '#255aa8'],
+    'document_send'      => ['mail',    'Dokumentum kiküldve',   '#255aa8'],
+    'document_create'    => ['plus',    'Dokumentum létrehozva', '#1e7a4c'],
+    'document'           => ['folder',  'Dokumentum',            '#255aa8'],
+    'email_failed'       => ['warning', 'Email küldés sikertelen','#b3261e'],
+    'auto_purge'         => ['trash',   'Automatikus törlés',    '#5b6472'],
+    'login_failed'       => ['ban',     'Sikertelen belépés',    '#b3261e'],
+    'login_success'      => ['lock',    'Bejelentkezés',         '#1e7a4c'],
+    'login'              => ['lock',    'Bejelentkezés',         '#1e7a4c'],
+    'view_audit_log'     => ['list',    'Audit napló',           '#5b6472'],
+    'view'               => ['eye',     'Megtekintés',           '#255aa8'],
+    'edit'               => ['edit',    'Szerkesztés',           '#b8790a'],
+    'delete'             => ['trash',   'Törlés',                '#b3261e'],
+    'logout'             => ['log-out', 'Kijelentkezés',         '#5b6472'],
+    'export'             => ['download','Export',                '#6a3fa0'],
+    'cleanup'            => ['trash',   'Auto-törlés',           '#b3261e'],
+    'create'             => ['plus',    'Létrehozás',            '#1e7a4c'],
 ];
 
 function actionBadge(string $action, array $labels): string {
-    $key = strtolower(explode('_', $action)[0]);
     foreach ($labels as $k => $v) {
         if (str_starts_with($action, $k)) {
-            [$icon, $label, $color] = $v;
-            return "<span style='background:{$color};color:#fff;padding:.15rem .5rem;border-radius:3px;font-size:.75rem;font-weight:700'>{$icon} {$label}</span>";
+            [$iconName, $label, $color] = $v;
+            return "<span style='display:inline-flex;align-items:center;gap:.35rem;background:{$color};color:#fff;padding:.2rem .55rem;border-radius:3px;font-size:.75rem;font-weight:700'>" . icon($iconName) . " {$label}</span>";
         }
     }
-    return "<span style='background:#999;color:#fff;padding:.15rem .5rem;border-radius:3px;font-size:.75rem'>{$action}</span>";
+    return "<span style='background:#5b6472;color:#fff;padding:.2rem .55rem;border-radius:3px;font-size:.75rem'>{$action}</span>";
 }
 ?>
 <!DOCTYPE html>
@@ -58,11 +68,11 @@ function actionBadge(string $action, array $labels): string {
 <div class="admin-content">
 
     <div class="page-header">
-        <h2>&#128203; Audit napló <span class="badge"><?= $total ?></span></h2>
+        <h2>Audit napló <span class="badge"><?= $total ?></span></h2>
         <form method="GET" class="filter-form">
             <input type="text" name="filter" value="<?= e($filter) ?>" placeholder="Keresés műveletre, felhasználóra...">
-            <button type="submit" class="btn btn-secondary">Szűrés</button>
-            <?php if ($filter): ?><a href="/admin/audit.php" class="btn-ghost">&#x2715;</a><?php endif; ?>
+            <button type="submit" class="btn btn-secondary"><?= icon('search') ?> Szűrés</button>
+            <?php if ($filter): ?><a href="/admin/audit.php" class="btn-ghost"><?= icon('x') ?></a><?php endif; ?>
         </form>
     </div>
 
@@ -81,11 +91,11 @@ function actionBadge(string $action, array $labels): string {
             </thead>
             <tbody>
             <?php if (empty($logs)): ?>
-                <tr><td colspan="7" style="text-align:center;color:var(--gray);padding:2rem">Nincs naplóbejegyzés.</td></tr>
+                <tr><td colspan="7" style="text-align:center;color:var(--gray-500);padding:2rem">Nincs naplóbejegyzés.</td></tr>
             <?php else: ?>
             <?php foreach ($logs as $log): ?>
                 <tr>
-                    <td style="color:var(--gray);font-size:.8rem"><?= $log['id'] ?></td>
+                    <td style="color:var(--gray-500);font-size:.8rem"><?= $log['id'] ?></td>
                     <td style="white-space:nowrap;font-size:.82rem"><?= e(substr($log['created_at'],0,16)) ?></td>
                     <td><strong><?= e($log['admin_username']) ?></strong></td>
                     <td><?= actionBadge($log['action'], $actionLabels) ?></td>
@@ -94,8 +104,8 @@ function actionBadge(string $action, array $labels): string {
                             <a href="/admin/view.php?id=<?= $log['record_id'] ?>" style="color:var(--blue)">#<?= $log['record_id'] ?></a>
                         <?php else: ?>–<?php endif; ?>
                     </td>
-                    <td style="font-size:.82rem;color:var(--gray)"><?= e($log['details'] ?? '') ?></td>
-                    <td style="font-size:.8rem;color:var(--gray)"><?= e($log['ip_address']) ?></td>
+                    <td style="font-size:.82rem;color:var(--gray-500)"><?= e($log['details'] ?? '') ?></td>
+                    <td style="font-size:.8rem;color:var(--gray-500)"><?= e($log['ip_address']) ?></td>
                 </tr>
             <?php endforeach; ?>
             <?php endif; ?>

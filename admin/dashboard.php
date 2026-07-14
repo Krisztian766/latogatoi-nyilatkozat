@@ -113,15 +113,15 @@ $rows = $listStmt->fetchAll();
             <input type="text" name="search" value="<?= e($search) ?>" placeholder="Keresés névre, cégre...">
             <input type="date" name="from" value="<?= e($from) ?>" title="Dátumtól">
             <input type="date" name="to"   value="<?= e($to) ?>"   title="Dátumig">
-            <button type="submit" class="btn btn-secondary">&#128269; Szűrés</button>
+            <button type="submit" class="btn btn-secondary"><?= icon('search') ?> Szűrés</button>
             <?php if ($search || $from || $to): ?>
-                <a href="/admin/dashboard.php" class="btn btn-ghost">&#x2715; Törlés</a>
+                <a href="/admin/dashboard.php" class="btn btn-ghost"><?= icon('x') ?> Törlés</a>
             <?php endif; ?>
         </form>
         <div class="toolbar-actions">
-            <a href="/admin/new.php" class="btn btn-primary">&#43; Új nyilatkozat</a>
-            <a href="/admin/export.php?<?= http_build_query(['search'=>$search,'from'=>$from,'to'=>$to]) ?>" class="btn btn-secondary">&#8595; CSV export</a>
-            <a href="/admin/pdf_bulk.php?<?= http_build_query(['search'=>$search,'from'=>$from,'to'=>$to]) ?>" class="btn btn-secondary" target="_blank">&#128438; PDF export (lista)</a>
+            <a href="/admin/new.php" class="btn btn-primary"><?= icon('plus') ?> Új nyilatkozat</a>
+            <a href="/admin/export.php?<?= http_build_query(['search'=>$search,'from'=>$from,'to'=>$to]) ?>" class="btn btn-secondary"><?= icon('download') ?> CSV export</a>
+            <a href="/admin/pdf_bulk.php?<?= http_build_query(['search'=>$search,'from'=>$from,'to'=>$to]) ?>" class="btn btn-secondary" target="_blank"><?= icon('download') ?> PDF export (lista)</a>
         </div>
     </div>
 
@@ -152,11 +152,11 @@ $rows = $listStmt->fetchAll();
                     <td><?= e($r['visit_date']) ?></td>
                     <td><?= e(substr($r['created_at'], 0, 16)) ?></td>
                     <td class="actions">
-                        <a href="/admin/view.php?id=<?= $r['id'] ?>" class="btn btn-sm">&#128065; Nézet</a>
-                        <a href="/admin/edit.php?id=<?= $r['id'] ?>" class="btn btn-sm btn-secondary">&#9998; Szerkeszt</a>
+                        <a href="/admin/view.php?id=<?= $r['id'] ?>" class="btn btn-sm"><?= icon('eye') ?> Nézet</a>
+                        <a href="/admin/edit.php?id=<?= $r['id'] ?>" class="btn btn-sm btn-secondary"><?= icon('edit') ?> Szerkeszt</a>
                         <a href="/admin/delete.php?id=<?= $r['id'] ?>&token=<?= e(generateCsrf()) ?>"
                            class="btn btn-sm btn-danger"
-                           onclick="return confirm('Biztosan törli?')">&#128465; Töröl</a>
+                           onclick="return confirm('Biztosan törli?')"><?= icon('trash') ?> Töröl</a>
                     </td>
                 </tr>
                 <?php endforeach; ?>
@@ -174,7 +174,7 @@ $rows = $listStmt->fetchAll();
     <?php endif; ?>
     <?php endif; ?>
 
-    <p style="margin-top:1rem;font-size:.82rem;color:var(--gray)">
+    <p style="margin-top:1rem;font-size:.82rem;color:var(--gray-500)">
         <?= $total ?> találat / result
     </p>
 </div>

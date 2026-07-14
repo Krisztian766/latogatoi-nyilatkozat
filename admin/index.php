@@ -74,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body class="admin-login-page">
 <div class="container">
     <div class="form-card login-card">
-        <h1 style="font-size:1.5rem">&#128274; Admin Bejelentkezés</h1>
+        <h1 style="font-size:1.5rem;display:flex;align-items:center;gap:.5rem"><?= icon('lock') ?> Admin Bejelentkezés</h1>
         <?php if ($error): ?>
             <div class="alert alert-error"><?= e($error) ?></div>
         <?php endif; ?>
@@ -89,7 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             <button type="submit" class="btn btn-primary btn-full">Bejelentkezés / Login</button>
         </form>
-        <p style="text-align:center;margin-top:1rem"><a href="/">&larr; Vissza a nyilatkozathoz</a></p>
+        <p style="text-align:center;margin-top:1rem"><a href="/" style="display:inline-flex;align-items:center;gap:.35rem"><?= icon('arrow-left') ?> Vissza a nyilatkozathoz</a></p>
     </div>
 </div>
 </body>

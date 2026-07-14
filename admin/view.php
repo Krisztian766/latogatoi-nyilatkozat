@@ -49,17 +49,17 @@ for ($i = 1; $i <= 4; $i++) {
 
     <div class="admin-content">
         <?php if (isset($_GET['created'])): ?>
-            <div class="alert alert-success" style="margin-bottom:1rem">&#10003; Nyilatkozat sikeresen létrehozva!</div>
+            <div class="alert alert-success" style="margin-bottom:1rem"><?= icon('check') ?> Nyilatkozat sikeresen létrehozva!</div>
         <?php endif; ?>
 
         <div class="no-print" style="margin-bottom:1rem;display:flex;gap:.5rem;flex-wrap:wrap;align-items:center">
-            <a href="/admin/dashboard.php" class="btn btn-secondary">&larr; Vissza</a>
-            <a href="/admin/edit.php?id=<?= $id ?>" class="btn btn-secondary">&#9998; Szerkeszt</a>
-            <a href="/admin/pdf.php?id=<?= $id ?>" target="_blank" class="btn btn-primary">&#128438; PDF letöltés</a>
+            <a href="/admin/dashboard.php" class="btn btn-secondary"><?= icon('arrow-left') ?> Vissza</a>
+            <a href="/admin/edit.php?id=<?= $id ?>" class="btn btn-secondary"><?= icon('edit') ?> Szerkeszt</a>
+            <a href="/admin/pdf.php?id=<?= $id ?>" target="_blank" class="btn btn-primary"><?= icon('download') ?> PDF letöltés</a>
             <a href="/admin/delete.php?id=<?= $id ?>&token=<?= e(generateCsrf()) ?>"
                class="btn btn-danger btn-sm"
                onclick="return confirm('Biztosan törli ezt a nyilatkozatot?')"
-               style="margin-left:auto">&#128465; Töröl</a>
+               style="margin-left:auto"><?= icon('trash') ?> Töröl</a>
         </div>
 
         <div class="declaration-view">
@@ -70,23 +70,23 @@ for ($i = 1; $i <= 4; $i++) {
             <!-- Integrity + GDPR badges -->
             <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-bottom:1.25rem">
                 <?php if ($hashOk === true): ?>
-                    <span class="compliance-badge badge-ok">&#10003; Adat-integritás: sértetlen</span>
+                    <span class="compliance-badge badge-ok"><?= icon('check') ?> Adat-integritás: sértetlen</span>
                 <?php elseif ($hashOk === false): ?>
-                    <span class="compliance-badge badge-warn">&#9888; Adat-integritás: MÓDOSÍTOTT!</span>
+                    <span class="compliance-badge badge-warn"><?= icon('warning') ?> Adat-integritás: MÓDOSÍTOTT!</span>
                 <?php else: ?>
-                    <span class="compliance-badge badge-gray">&#8212; Hash: nincs (régi rekord)</span>
+                    <span class="compliance-badge badge-gray"><?= icon('minus') ?> Hash: nincs (régi rekord)</span>
                 <?php endif; ?>
 
                 <?php if (!empty($d['gdpr_accepted'])): ?>
-                    <span class="compliance-badge badge-ok">&#10003; GDPR hozzájárulás: megadva</span>
+                    <span class="compliance-badge badge-ok"><?= icon('check') ?> GDPR hozzájárulás: megadva</span>
                 <?php else: ?>
-                    <span class="compliance-badge badge-gray">&#8212; GDPR: nem rögzített</span>
+                    <span class="compliance-badge badge-gray"><?= icon('minus') ?> GDPR: nem rögzített</span>
                 <?php endif; ?>
 
                 <?php if (!empty($d['expires_at'])): ?>
                     <?php $expired = $d['expires_at'] < date('Y-m-d'); ?>
                     <span class="compliance-badge <?= $expired ? 'badge-warn' : 'badge-gray' ?>">
-                        <?= $expired ? '&#9888; Lejárt' : '&#128197; Lejár' ?>: <?= e($d['expires_at']) ?>
+                        <?= $expired ? icon('warning') : icon('calendar') ?> <?= $expired ? 'Lejárt' : 'Lejár' ?>: <?= e($d['expires_at']) ?>
                     </span>
                 <?php endif; ?>
             </div>
@@ -115,7 +115,7 @@ for ($i = 1; $i <= 4; $i++) {
                         </p>
                     <?php endforeach; ?>
                 <?php else: ?>
-                    <p style="color:#888;font-style:italic">Nincs megadva nyilatkozat szöveg. Beállítható az admin &rarr; Beállítások menüpontban.</p>
+                    <p style="color:#888;font-style:italic">Nincs megadva nyilatkozat szöveg. Beállítható az admin Beállítások menüpontban.</p>
                 <?php endif; ?>
             </div>
 

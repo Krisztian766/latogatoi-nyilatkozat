@@ -59,7 +59,7 @@ $csrf = generateCsrf();
     <div class="form-card">
         <?php if ($s['status'] === 'signed'): ?>
             <div class="alert alert-success">
-                &#10003; Ezt a dokumentumot már aláírta <?= e($s['signed_at']) ?>-kor. Köszönjük!
+                <?= icon('check') ?> Ezt a dokumentumot már aláírta <?= e($s['signed_at']) ?>-kor. Köszönjük!
             </div>
         <?php elseif ($s['status'] === 'revoked'): ?>
             <div class="alert alert-error">
@@ -74,7 +74,7 @@ $csrf = generateCsrf();
         <?php endif; ?>
         <?php if (!empty($s['doc_file_path'])): ?>
             <p style="margin-top:1rem">
-                <a href="/<?= e($s['doc_file_path']) ?>" target="_blank" class="btn btn-secondary">&#128206; Melléklet megtekintése</a>
+                <a href="/<?= e($s['doc_file_path']) ?>" target="_blank" class="btn btn-secondary"><?= icon('paperclip') ?> Melléklet megtekintése</a>
             </p>
         <?php endif; ?>
 
@@ -92,14 +92,14 @@ $csrf = generateCsrf();
                 <label>Aláírás <span class="required">*</span></label>
                 <div class="sig-wrapper">
                     <canvas id="signaturePad"></canvas>
-                    <button type="button" id="clearSig" class="btn-clear">&#x2715; Törlés</button>
+                    <button type="button" id="clearSig" class="btn-clear"><?= icon('x') ?> Törlés</button>
                 </div>
                 <p class="sig-hint">Kérjük, írja alá ujjával vagy egérrel.</p>
                 <p class="alert alert-error" id="sigError" style="display:none;margin-top:.6rem">Kérjük, írja alá a dokumentumot!</p>
             </div>
 
             <button type="submit" class="btn btn-primary btn-full" id="submitBtn">
-                &#10003;&nbsp; Aláírás és beküldés
+                <?= icon('check') ?> Aláírás és beküldés
             </button>
         </form>
 

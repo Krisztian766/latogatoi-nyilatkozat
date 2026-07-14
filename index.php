@@ -63,13 +63,9 @@ $langParam = '?lang=' . $lang;
     <img src="/assets/logo.png" alt="Logo" class="site-logo">
     <div class="lang-switcher">
         <a href="<?= $langParam ?>" class="lang-btn <?= $lang==='hu' ? 'active' : '' ?>"
-           onclick="setLang('hu'); return false;">
-            <span class="flag">🇭🇺</span> Magyar
-        </a>
+           onclick="setLang('hu'); return false;">HU</a>
         <a href="<?= $langParam ?>" class="lang-btn <?= $lang==='en' ? 'active' : '' ?>"
-           onclick="setLang('en'); return false;">
-            <span class="flag">🇬🇧</span> English
-        </a>
+           onclick="setLang('en'); return false;">EN</a>
     </div>
 </div>
 
@@ -78,7 +74,7 @@ $langParam = '?lang=' . $lang;
 
         <?php if (isset($_GET['success'])): ?>
             <div class="alert alert-success">
-                &#10003; <?= e($t['success']) ?>
+                <?= icon('check') ?> <?= e($t['success']) ?>
             </div>
             <p style="text-align:center;margin-top:1.5rem">
                 <a href="/<?= $langParam ?>" class="btn btn-primary"><?= e($t['btn_new']) ?></a>
@@ -152,7 +148,7 @@ $langParam = '?lang=' . $lang;
                 <label><?= e($t['section_signature']) ?> <span class="required">*</span></label>
                 <div class="sig-wrapper">
                     <canvas id="signaturePad"></canvas>
-                    <button type="button" id="clearSig" class="btn-clear">&#x2715; <?= e($t['btn_clear']) ?></button>
+                    <button type="button" id="clearSig" class="btn-clear"><?= icon('x') ?> <?= e($t['btn_clear']) ?></button>
                 </div>
                 <p class="sig-hint"><?= e($t['sig_hint']) ?></p>
                 <p class="alert alert-error" id="sigError" style="display:none;margin-top:.6rem"><?= e($t['err_signature']) ?></p>
@@ -167,7 +163,7 @@ $langParam = '?lang=' . $lang;
                     <?php if ($gdprNotice): ?>
                         <button type="button" class="gdpr-toggle" id="gdprToggle">
                             <span><?= e($t['gdpr_show']) ?></span>
-                            <span class="gdpr-toggle-arrow">▼</span>
+                            <span class="gdpr-toggle-arrow"><?= icon('chevron-down') ?></span>
                         </button>
                         <div class="gdpr-notice-text" id="gdprNoticeText" style="display:none">
                             <?= nl2br(e($gdprNotice)) ?>
@@ -182,7 +178,7 @@ $langParam = '?lang=' . $lang;
             <?php endif; ?>
 
             <button type="submit" class="btn btn-primary btn-full" id="submitBtn">
-                &#10003;&nbsp; <?= e($t['btn_submit']) ?>
+                <?= icon('check') ?> <?= e($t['btn_submit']) ?>
             </button>
         </form>
 

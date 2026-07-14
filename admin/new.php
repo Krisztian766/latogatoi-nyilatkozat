@@ -59,8 +59,8 @@ $csrf     = generateCsrf();
 
 <div class="admin-content">
     <div class="page-header">
-        <h2>&#43; Új nyilatkozat létrehozása</h2>
-        <a href="/admin/dashboard.php" class="btn btn-secondary">&larr; Vissza</a>
+        <h2>Új nyilatkozat létrehozása</h2>
+        <a href="/admin/dashboard.php" class="btn btn-secondary"><?= icon('arrow-left') ?> Vissza</a>
     </div>
 
     <?php if ($error): ?><div class="alert alert-error"><?= e($error) ?></div><?php endif; ?>
@@ -98,7 +98,7 @@ $csrf     = generateCsrf();
 
             <div class="sig-wrapper" style="margin-bottom:.5rem">
                 <canvas id="signaturePad"></canvas>
-                <button type="button" id="clearSig" class="btn-clear">&#x2715; Törlés</button>
+                <button type="button" id="clearSig" class="btn-clear"><?= icon('x') ?> Törlés</button>
             </div>
             <p class="sig-hint">Rajzoljon aláírást, vagy hagyja üresen.</p>
 
@@ -110,7 +110,7 @@ $csrf     = generateCsrf();
             </label>
 
             <div style="margin-top:1.5rem;display:flex;gap:.75rem;flex-wrap:wrap">
-                <button type="submit" class="btn btn-primary">&#10003; Nyilatkozat létrehozása</button>
+                <button type="submit" class="btn btn-primary"><?= icon('check') ?> Nyilatkozat létrehozása</button>
                 <a href="/admin/dashboard.php" class="btn btn-secondary">Mégse</a>
             </div>
         </form>
