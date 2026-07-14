@@ -7,24 +7,41 @@ if (!empty($_SESSION['admin_logged_in'])) {
     exit;
 }
 
-$error = '';
+$error       = '';
+$maxAttempts = 5;
+$lockMinutes = 15;
+$ip          = getClientIp();
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = trim($_POST['username'] ?? '');
-    $password = $_POST['password'] ?? '';
-
     try {
-        $db   = getDB();
-        $stmt = $db->prepare('SELECT * FROM admin_users WHERE username = ?');
-        $stmt->execute([$username]);
-        $user = $stmt->fetch();
+        $db = getDB();
 
-        if ($user && password_verify($password, $user['password_hash'])) {
-            $_SESSION['admin_logged_in'] = true;
-            $_SESSION['admin_username']  = $username;
-            header('Location: /admin/dashboard.php');
-            exit;
+        $attemptStmt = $db->prepare(
+            "SELECT COUNT(*) FROM audit_log WHERE action = 'login_failed' AND ip_address = ? AND created_at > DATE_SUB(NOW(), INTERVAL {$lockMinutes} MINUTE)"
+        );
+        $attemptStmt->execute([$ip]);
+        $recentFailures = (int)$attemptStmt->fetchColumn();
+
+        if ($recentFailures >= $maxAttempts) {
+            $error = "Túl sok sikertelen próbálkozás. Kérjük, próbálja újra {$lockMinutes} perc múlva! / Too many failed attempts, try again in {$lockMinutes} minutes!";
         } else {
-            $error = 'Hibás felhasználónév vagy jelszó! / Invalid username or password!';
+            $username = trim($_POST['username'] ?? '');
+            $password = $_POST['password'] ?? '';
+
+            $stmt = $db->prepare('SELECT * FROM admin_users WHERE username = ?');
+            $stmt->execute([$username]);
+            $user = $stmt->fetch();
+
+            if ($user && password_verify($password, $user['password_hash'])) {
+                $_SESSION['admin_logged_in'] = true;
+                $_SESSION['admin_username']  = $username;
+                logAudit('login_success', null, $username);
+                header('Location: /admin/dashboard.php');
+                exit;
+            } else {
+                logAudit('login_failed', null, $username);
+                $error = 'Hibás felhasználónév vagy jelszó! / Invalid username or password!';
+            }
         }
     } catch (Exception $e) {
         $error = 'Adatbázis hiba! / Database error!';

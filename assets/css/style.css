@@ -603,6 +603,54 @@ h3 {
     color: var(--gray-500);
 }
 
+/* ── Trend chart ── */
+.chart-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.5rem 1rem;
+    margin-bottom: 1.75rem;
+}
+
+.chart-title {
+    font-size: .78rem;
+    font-weight: 600;
+    color: var(--gray-500);
+    margin-bottom: .85rem;
+}
+
+.bar-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 90px;
+}
+
+.bar-col {
+    flex: 1;
+    height: 100%;
+    display: flex;
+    align-items: flex-end;
+}
+
+.bar {
+    width: 100%;
+    background: var(--blue);
+    border-radius: 2px 2px 0 0;
+    min-height: 2px;
+    transition: background .15s;
+}
+
+.bar-col:hover .bar { background: var(--navy); }
+
+.chart-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: .4rem;
+    font-size: .68rem;
+    color: var(--gray-500);
+}
+
 /* ── Toolbar ── */
 .toolbar {
     display: flex;

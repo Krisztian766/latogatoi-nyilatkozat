@@ -21,6 +21,21 @@ foreach ([
     $stats[$k] = (int)$db->query($sql)->fetchColumn();
 }
 
+// Daily submission counts for the last 30 days (for the trend chart)
+$dailyRows = $db->query("
+    SELECT DATE(created_at) AS d, COUNT(*) AS c
+    FROM declarations
+    WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 29 DAY)
+    GROUP BY DATE(created_at)
+")->fetchAll(PDO::FETCH_KEY_PAIR);
+
+$chartDays = [];
+for ($i = 29; $i >= 0; $i--) {
+    $d = date('Y-m-d', strtotime("-{$i} days"));
+    $chartDays[$d] = (int)($dailyRows[$d] ?? 0);
+}
+$chartMax = max(1, max($chartDays));
+
 // Build WHERE
 $where  = [];
 $params = [];
@@ -33,7 +48,6 @@ if ($from !== '') { $where[] = 'visit_date >= ?'; $params[] = $from; }
 if ($to   !== '') { $where[] = 'visit_date <= ?'; $params[] = $to; }
 $whereSQL = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 
-$total      = (int)$db->prepare("SELECT COUNT(*) FROM declarations {$whereSQL}")->execute($params) ? $db->prepare("SELECT COUNT(*) FROM declarations {$whereSQL}")->execute($params) : 0;
 $countStmt  = $db->prepare("SELECT COUNT(*) FROM declarations {$whereSQL}");
 $countStmt->execute($params);
 $total      = (int)$countStmt->fetchColumn();
@@ -77,6 +91,22 @@ $rows = $listStmt->fetchAll();
         </div>
     </div>
 
+    <!-- Trend chart -->
+    <div class="chart-card">
+        <div class="chart-title">Beküldések / nap &ndash; utóbbi 30 nap</div>
+        <div class="bar-chart">
+            <?php foreach ($chartDays as $day => $count): ?>
+                <div class="bar-col" title="<?= e($day) ?>: <?= $count ?>">
+                    <div class="bar" style="height: <?= $count > 0 ? max(4, round($count / $chartMax * 100)) : 2 ?>%"></div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+        <div class="chart-labels">
+            <span><?= e(array_key_first($chartDays)) ?></span>
+            <span><?= e(array_key_last($chartDays)) ?></span>
+        </div>
+    </div>
+
     <!-- Filters & actions -->
     <div class="toolbar">
         <form method="GET" class="filter-form">
@@ -91,6 +121,7 @@ $rows = $listStmt->fetchAll();
         <div class="toolbar-actions">
             <a href="/admin/new.php" class="btn btn-primary">&#43; Új nyilatkozat</a>
             <a href="/admin/export.php?<?= http_build_query(['search'=>$search,'from'=>$from,'to'=>$to]) ?>" class="btn btn-secondary">&#8595; CSV export</a>
+            <a href="/admin/pdf_bulk.php?<?= http_build_query(['search'=>$search,'from'=>$from,'to'=>$to]) ?>" class="btn btn-secondary" target="_blank">&#128438; PDF export (lista)</a>
         </div>
     </div>
 

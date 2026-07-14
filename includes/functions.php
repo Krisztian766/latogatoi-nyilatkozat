@@ -41,12 +41,12 @@ function verifyCsrf(string $token): bool {
 }
 
 function sendSmtpEmail(string $to, string $subject, string $body): bool {
-    $host     = 'smtp.rackhost.hu';
-    $port     = 465;
-    $username = 'admin@czeczokrisztian.hu';
-    $password = 'Weenie.00';
-    $from     = 'admin@czeczokrisztian.hu';
-    $fromName = 'Látogatói Rendszer';
+    $host     = SMTP_HOST;
+    $port     = SMTP_PORT;
+    $username = SMTP_USER;
+    $password = SMTP_PASS;
+    $from     = SMTP_FROM;
+    $fromName = SMTP_FROM_NAME;
 
     $context = stream_context_create([
         'ssl' => [
@@ -56,10 +56,22 @@ function sendSmtpEmail(string $to, string $subject, string $body): bool {
     ]);
 
     $socket = @stream_socket_client("ssl://{$host}:{$port}", $errno, $errstr, 30, STREAM_CLIENT_CONNECT, $context);
-    if (!$socket) return false;
+    if (!$socket) {
+        error_log("sendSmtpEmail: connection to {$host}:{$port} failed ({$errno}): {$errstr}");
+        return false;
+    }
 
     $read = function() use ($socket) { return fgets($socket, 512); };
     $send = function(string $cmd) use ($socket) { fputs($socket, $cmd . "\r\n"); };
+    $expectOk = function(string $step) use ($read): bool {
+        $line = $read();
+        $code = $line !== false ? (int)substr($line, 0, 3) : 0;
+        if ($code < 200 || $code >= 400) {
+            error_log("sendSmtpEmail: unexpected response after {$step}: " . trim((string)$line));
+            return false;
+        }
+        return true;
+    };
 
     $read();
     $send("EHLO czeczokrisztian.hu");
@@ -70,12 +82,12 @@ function sendSmtpEmail(string $to, string $subject, string $body): bool {
     $send(base64_encode($username));
     $read();
     $send(base64_encode($password));
-    $read();
+    if (!$expectOk('AUTH LOGIN')) { fclose($socket); return false; }
 
     $send("MAIL FROM:<{$from}>");
-    $read();
+    if (!$expectOk('MAIL FROM')) { fclose($socket); return false; }
     $send("RCPT TO:<{$to}>");
-    $read();
+    if (!$expectOk('RCPT TO')) { fclose($socket); return false; }
     $send("DATA");
     $read();
 
@@ -93,11 +105,11 @@ function sendSmtpEmail(string $to, string $subject, string $body): bool {
     $msg .= $encodedBody . "\r\n.\r\n";
 
     fputs($socket, $msg);
-    $read();
+    $sent = $expectOk('DATA body');
     $send("QUIT");
     fclose($socket);
 
-    return true;
+    return $sent;
 }
 
 function e(string $str): string {
@@ -152,11 +164,15 @@ function sendNotificationWithCc(array $declaration): void {
     $body .= "GDPR hozzájárulás:         " . ($declaration['gdpr_accepted'] ? 'Igen' : 'Nem') . "\n\n";
     $body .= "Megtekintés:\n" . SITE_URL . '/admin/view.php?id=' . $declaration['id'] . "\n";
 
-    sendSmtpEmail($email, $subject, $body);
+    if (!sendSmtpEmail($email, $subject, $body)) {
+        logAudit('email_failed', $declaration['id'] ?? null, "Értesítő email nem ment ki: {$email}");
+    }
 
     $cc = getSetting('notification_email_cc');
     if ($cc && $cc !== $email) {
-        sendSmtpEmail($cc, $subject, $body);
+        if (!sendSmtpEmail($cc, $subject, $body)) {
+            logAudit('email_failed', $declaration['id'] ?? null, "Értesítő email (CC) nem ment ki: {$cc}");
+        }
     }
 }
 
