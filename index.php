@@ -22,6 +22,9 @@ if (!inductionSatisfied()) {
     exit;
 }
 
+$currentVt    = !empty($_SESSION['induction']['visit_type_id']) ? getVisitType((int)$_SESSION['induction']['visit_type_id']) : null;
+$showPosition = $currentVt && !empty($currentVt['show_position']);
+
 $csrf     = generateCsrf();
 $today    = date('Y-m-d');
 $today_hu = $lang === 'hu' ? date('Y. m. d.') : date('d/m/Y');
@@ -89,19 +92,16 @@ $langParam = '?lang=' . $lang;
 <div class="container">
     <div class="form-card">
 
-        <?php if (!isset($_GET['success']) && !empty($_SESSION['induction']['visit_type_id'])): ?>
-            <?php $currentVt = getVisitType((int)$_SESSION['induction']['visit_type_id']); ?>
-            <?php if ($currentVt): ?>
-                <p class="visit-type-badge">
-                    <?= icon('check') ?>
-                    <?= e($lang === 'en' && trim($currentVt['name_en']) !== '' ? $currentVt['name_en'] : $currentVt['name_hu']) ?>
-                    <?php if (count(getActiveVisitTypes()) > 1): ?>
-                        <a href="/?change_type=1&lang=<?= $lang ?>" class="visit-type-change">
-                            <?= e($t['ind_change_type']) ?>
-                        </a>
-                    <?php endif; ?>
-                </p>
-            <?php endif; ?>
+        <?php if (!isset($_GET['success']) && $currentVt): ?>
+            <p class="visit-type-badge">
+                <?= icon('check') ?>
+                <?= e($lang === 'en' && trim($currentVt['name_en']) !== '' ? $currentVt['name_en'] : $currentVt['name_hu']) ?>
+                <?php if (count(getActiveVisitTypes()) > 1): ?>
+                    <a href="/?change_type=1&lang=<?= $lang ?>" class="visit-type-change">
+                        <?= e($t['ind_change_type']) ?>
+                    </a>
+                <?php endif; ?>
+            </p>
         <?php endif; ?>
 
         <?php if (isset($_GET['success'])): ?>
@@ -152,6 +152,14 @@ $langParam = '?lang=' . $lang;
                        placeholder="<?= e($t['placeholder_company']) ?>"
                        value="<?= e($_GET['company'] ?? '') ?>">
             </div>
+            <?php if ($showPosition): ?>
+            <div class="form-group">
+                <label for="position"><?= e($t['field_position']) ?></label>
+                <input type="text" id="position" name="position"
+                       placeholder="<?= e($t['placeholder_position']) ?>"
+                       value="<?= e($_GET['position'] ?? '') ?>">
+            </div>
+            <?php endif; ?>
             <div class="form-group">
                 <label for="contact"><?= e($fContact) ?> <span class="required">*</span></label>
                 <input type="text" id="contact" name="contact" required list="contactList"

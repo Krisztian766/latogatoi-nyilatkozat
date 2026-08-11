@@ -21,6 +21,22 @@ foreach ([
     $stats[$k] = (int)$db->query($sql)->fetchColumn();
 }
 
+// Trainings expiring within 30 days or already expired, so the safety
+// officer can proactively schedule retraining. Each row is a single
+// declaration, not a persistent per-employee record — the app has no
+// employee accounts, so the same person retraining shows as a new row
+// rather than updating an existing one.
+$expiringStmt = $db->query("
+    SELECT d.id, d.name, d.position, d.training_valid_until, vt.name_hu AS visit_type_name
+    FROM declarations d
+    JOIN visit_types vt ON vt.id = d.visit_type_id
+    WHERE d.training_valid_until IS NOT NULL
+      AND d.training_valid_until <= DATE_ADD(CURDATE(), INTERVAL 30 DAY)
+    ORDER BY d.training_valid_until ASC
+    LIMIT 50
+");
+$expiringTrainings = $expiringStmt->fetchAll();
+
 // Daily submission counts for the last 30 days (for the trend chart)
 $dailyRows = $db->query("
     SELECT DATE(created_at) AS d, COUNT(*) AS c
@@ -94,6 +110,43 @@ $rows = $listStmt->fetchAll();
             <div class="stat-label">Utóbbi 30 nap</div>
         </div>
     </div>
+
+    <!-- Expiring / expired trainings -->
+    <?php if (!empty($expiringTrainings)): ?>
+    <div class="chart-card" style="margin-bottom:1.5rem">
+        <div class="chart-title">Lejáró / lejárt oktatások</div>
+        <div class="table-wrapper" style="margin-top:.75rem">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Név</th>
+                        <th>Munkakör</th>
+                        <th>Oktatás</th>
+                        <th>Érvényesség</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($expiringTrainings as $et): ?>
+                        <?php $etExpired = $et['training_valid_until'] < date('Y-m-d'); ?>
+                        <tr>
+                            <td><strong><?= e($et['name']) ?></strong></td>
+                            <td><?= e($et['position'] ?: '–') ?></td>
+                            <td><?= e($et['visit_type_name']) ?></td>
+                            <td>
+                                <span class="compliance-badge <?= $etExpired ? 'badge-warn' : 'badge-gray' ?>" style="font-size:.72rem">
+                                    <?= $etExpired ? icon('warning') : icon('calendar') ?>
+                                    <?= $etExpired ? 'Lejárt' : 'Lejár' ?>: <?= e($et['training_valid_until']) ?>
+                                </span>
+                            </td>
+                            <td class="actions"><a href="/admin/view.php?id=<?= $et['id'] ?>" class="btn btn-sm"><?= icon('eye') ?> Nézet</a></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <?php endif; ?>
 
     <!-- Trend chart -->
     <div class="chart-card">

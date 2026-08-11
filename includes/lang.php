@@ -37,6 +37,8 @@ return [
         'ind_required'        => 'Kötelező megválaszolni!',
         'ind_btn_back'        => 'Vissza: %s',
         'ind_change_type'     => 'Típus váltása',
+        'field_position'      => 'Munkakör',
+        'placeholder_position' => 'pl. Gépkezelő',
     ],
     'en' => [
         'section_personal'    => 'Personal Information',
@@ -75,5 +77,7 @@ return [
         'ind_required'        => 'This field is required!',
         'ind_btn_back'        => 'Back: %s',
         'ind_change_type'     => 'Change type',
+        'field_position'      => 'Position',
+        'placeholder_position' => 'e.g. Machine operator',
     ],
 ];

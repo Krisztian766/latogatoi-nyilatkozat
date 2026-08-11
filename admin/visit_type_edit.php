@@ -28,14 +28,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !verifyCsrf($_POST['csrf_token'] ??
         $pass_percent  = max(0, min(100, (int)($_POST['quiz_pass_percent'] ?? 80)));
         $is_active     = !empty($_POST['is_active']) ? 1 : 0;
         $sort_order    = (int)($_POST['sort_order'] ?? 0);
+        $trainer_name  = trim($_POST['trainer_name'] ?? '');
+        $trainer_qual  = trim($_POST['trainer_qualification'] ?? '');
+        $validity_days = trim($_POST['validity_days'] ?? '') !== '' ? max(1, (int)$_POST['validity_days']) : null;
+        $show_position = !empty($_POST['show_position']) ? 1 : 0;
 
         if ($name_hu === '') {
             $error = 'A típus neve kötelező!';
         } else {
             $db->prepare('UPDATE visit_types SET name_hu=?, name_en=?, doc_title_hu=?, doc_title_en=?,
-                           doc_content_hu=?, doc_content_en=?, quiz_pass_percent=?, is_active=?, sort_order=? WHERE id=?')
+                           doc_content_hu=?, doc_content_en=?, quiz_pass_percent=?, is_active=?, sort_order=?,
+                           trainer_name=?, trainer_qualification=?, validity_days=?, show_position=? WHERE id=?')
                ->execute([$name_hu, $name_en, $doc_title_hu, $doc_title_en,
-                          $doc_content_hu, $doc_content_en, $pass_percent, $is_active, $sort_order, $id]);
+                          $doc_content_hu, $doc_content_en, $pass_percent, $is_active, $sort_order,
+                          $trainer_name, $trainer_qual, $validity_days, $show_position, $id]);
             logAudit('visit_type_updated', $id, $name_hu);
             $success = 'Adatok mentve!';
             $type = getVisitType($id);
@@ -271,6 +277,32 @@ if ($editQuestion) {
                         <small>Kisebb szám kerül előrébb a látogatói választón.</small>
                     </div>
                 </div>
+
+                <h4 style="margin:1.25rem 0 .5rem">Oktatási igazoláshoz</h4>
+                <p style="font-size:.82rem;color:var(--gray-500);margin-bottom:.75rem">
+                    Ezeket az adatokat a dedikált oktatási igazolás PDF mutatja. A tartalom szakmai jóváhagyása
+                    (a videó/dokumentum/teszt ténylegesen megfelel-e a jogszabályi előírásoknak) az itt megadott
+                    oktató felelőssége — a rendszer csak dokumentálja, nem hitelesíti a tartalmat.
+                </p>
+                <div class="form-row" style="max-width:600px">
+                    <div class="form-group">
+                        <label>Oktató neve:</label>
+                        <input type="text" name="trainer_name" value="<?= e($type['trainer_name'] ?? '') ?>" placeholder="pl. Kovács János">
+                    </div>
+                    <div class="form-group">
+                        <label>Oktató képesítése / engedélyszáma:</label>
+                        <input type="text" name="trainer_qualification" value="<?= e($type['trainer_qualification'] ?? '') ?>" placeholder="pl. Munkavédelmi technikus, eng.sz. 12345">
+                    </div>
+                </div>
+                <div class="form-group" style="max-width:300px">
+                    <label>Érvényesség (nap):</label>
+                    <input type="number" name="validity_days" min="1" value="<?= e($type['validity_days'] !== null ? (int)$type['validity_days'] : '') ?>" placeholder="pl. 365">
+                    <small>Ha üres, az oktatás nem jár le. Tipikusan 365 nap (évenkénti ismétlés).</small>
+                </div>
+                <label class="checkbox-label" style="margin-bottom:.5rem">
+                    <input type="checkbox" name="show_position" value="1" <?= !empty($type['show_position']) ? 'checked' : '' ?>>
+                    <span>Munkakör mező megjelenítése az űrlapon (új munkavállalóknak — a Cég mező mellett)</span>
+                </label>
                 <label class="checkbox-label" style="margin-bottom:1rem">
                     <input type="checkbox" name="is_active" value="1" <?= $type['is_active'] ? 'checked' : '' ?>>
                     <span>Aktív (választható a látogatók számára)</span>

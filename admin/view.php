@@ -57,6 +57,9 @@ for ($i = 1; $i <= 4; $i++) {
             <a href="/admin/dashboard.php" class="btn btn-secondary"><?= icon('arrow-left') ?> Vissza</a>
             <a href="/admin/edit.php?id=<?= $id ?>" class="btn btn-secondary"><?= icon('edit') ?> Szerkeszt</a>
             <a href="/admin/pdf.php?id=<?= $id ?>" target="_blank" class="btn btn-primary"><?= icon('download') ?> PDF letöltés</a>
+            <?php if ($visitType): ?>
+                <a href="/admin/pdf_certificate.php?id=<?= $id ?>" target="_blank" class="btn btn-secondary"><?= icon('document') ?> Oktatási igazolás</a>
+            <?php endif; ?>
             <a href="/admin/delete.php?id=<?= $id ?>&token=<?= e(generateCsrf()) ?>"
                class="btn btn-danger btn-sm"
                onclick="return confirm('Biztosan törli ezt a nyilatkozatot?')"
@@ -100,10 +103,20 @@ for ($i = 1; $i <= 4; $i++) {
                         Teszt: <?= (int)$d['quiz_score'] ?>/<?= (int)$d['quiz_total'] ?> (<?= $d['quiz_passed'] ? 'sikeres' : 'sikertelen' ?>)
                     </span>
                 <?php endif; ?>
+                <?php if (!empty($d['training_valid_until'])): ?>
+                    <?php $trainingExpired = $d['training_valid_until'] < date('Y-m-d'); ?>
+                    <span class="compliance-badge <?= $trainingExpired ? 'badge-warn' : 'badge-gray' ?>">
+                        <?= $trainingExpired ? icon('warning') : icon('calendar') ?>
+                        Oktatás <?= $trainingExpired ? 'lejárt' : 'érvényes' ?>: <?= e($d['training_valid_until']) ?>
+                    </span>
+                <?php endif; ?>
             </div>
 
             <table class="info-table">
                 <tr><th><?= e($fName) ?>:</th><td><strong><?= e($d['name']) ?></strong></td></tr>
+                <?php if (!empty($d['position'])): ?>
+                <tr><th>Munkakör:</th><td><?= e($d['position']) ?></td></tr>
+                <?php endif; ?>
                 <tr><th><?= e($fCompany) ?>:</th><td><?= e($d['company'] ?: '–') ?></td></tr>
                 <tr><th><?= e($fContact) ?>:</th><td><?= e($d['contact']) ?></td></tr>
                 <tr><th>Dátum / Date:</th><td><?= e($d['visit_date']) ?></td></tr>
