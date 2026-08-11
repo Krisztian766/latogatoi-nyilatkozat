@@ -346,6 +346,12 @@ function inductionSatisfied(): bool {
     if (empty($activeTypes)) return true; // feature not configured, nothing to satisfy
 
     if (session_status() === PHP_SESSION_NONE) session_start();
+
+    // A logged-in admin previewing the public form (e.g. the "preview" links in
+    // Settings) isn't a real visitor and shouldn't be routed through the
+    // visitor safety induction just to look at the declaration text.
+    if (!empty($_SESSION['admin_logged_in'])) return true;
+
     $ind = $_SESSION['induction'] ?? null;
     if (!$ind) return false;
 

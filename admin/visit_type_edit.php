@@ -27,14 +27,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !verifyCsrf($_POST['csrf_token'] ??
         $doc_content_en = trim($_POST['doc_content_en'] ?? '');
         $pass_percent  = max(0, min(100, (int)($_POST['quiz_pass_percent'] ?? 80)));
         $is_active     = !empty($_POST['is_active']) ? 1 : 0;
+        $sort_order    = (int)($_POST['sort_order'] ?? 0);
 
         if ($name_hu === '') {
             $error = 'A típus neve kötelező!';
         } else {
             $db->prepare('UPDATE visit_types SET name_hu=?, name_en=?, doc_title_hu=?, doc_title_en=?,
-                           doc_content_hu=?, doc_content_en=?, quiz_pass_percent=?, is_active=? WHERE id=?')
+                           doc_content_hu=?, doc_content_en=?, quiz_pass_percent=?, is_active=?, sort_order=? WHERE id=?')
                ->execute([$name_hu, $name_en, $doc_title_hu, $doc_title_en,
-                          $doc_content_hu, $doc_content_en, $pass_percent, $is_active, $id]);
+                          $doc_content_hu, $doc_content_en, $pass_percent, $is_active, $sort_order, $id]);
             logAudit('visit_type_updated', $id, $name_hu);
             $success = 'Adatok mentve!';
             $type = getVisitType($id);
@@ -118,6 +119,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !verifyCsrf($_POST['csrf_token'] ??
         }
     }
 
+    if (isset($_POST['update_question'])) {
+        $qid = (int)($_POST['question_id'] ?? 0);
+        $qHu = trim($_POST['question_hu'] ?? '');
+        $qEn = trim($_POST['question_en'] ?? '');
+        $optsHu = array_map('trim', $_POST['option_hu'] ?? []);
+        $optsEn = array_map('trim', $_POST['option_en'] ?? []);
+        $correctIdx = (int)($_POST['correct_option'] ?? -1);
+
+        $filledCount = count(array_filter($optsHu, fn($v) => $v !== ''));
+
+        $check = $db->prepare('SELECT id FROM quiz_questions WHERE id = ? AND visit_type_id = ?');
+        $check->execute([$qid, $id]);
+
+        if (!$check->fetch()) {
+            $error = 'A kérdés nem található!';
+        } elseif ($qHu === '') {
+            $error = 'A kérdés szövege kötelező!';
+        } elseif ($filledCount < 2) {
+            $error = 'Legalább 2 válaszlehetőség szükséges!';
+        } elseif ($correctIdx < 0 || $correctIdx >= count($optsHu) || trim($optsHu[$correctIdx] ?? '') === '') {
+            $error = 'Jelölje meg, melyik a helyes válasz!';
+        } else {
+            $db->prepare('UPDATE quiz_questions SET question_hu=?, question_en=? WHERE id=?')
+               ->execute([$qHu, $qEn, $qid]);
+            // Simplest correct way to handle changed/added/removed options: replace them all,
+            // rather than trying to diff — avoids the class of bug where an edit could leave
+            // a stale is_correct=1 on an option that's no longer meant to be the answer.
+            $db->prepare('DELETE FROM quiz_options WHERE question_id = ?')->execute([$qid]);
+            $stmt = $db->prepare('INSERT INTO quiz_options (question_id, option_hu, option_en, is_correct, sort_order) VALUES (?, ?, ?, ?, ?)');
+            $order = 0;
+            foreach ($optsHu as $i => $oHu) {
+                if (trim($oHu) === '') continue;
+                $stmt->execute([$qid, $oHu, $optsEn[$i] ?? '', $i === $correctIdx ? 1 : 0, $order++]);
+            }
+            logAudit('quiz_question_updated', $id, $qHu);
+            $success = 'Kérdés frissítve!';
+        }
+    }
+
     if (isset($_POST['delete_question'])) {
         $qid = (int)$_POST['question_id'];
         $db->prepare('DELETE FROM quiz_questions WHERE id = ? AND visit_type_id = ?')->execute([$qid, $id]);
@@ -139,6 +179,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !verifyCsrf($_POST['csrf_token'] ??
 }
 
 $questions = getQuizQuestions($id);
+
+$editQid       = (int)($_GET['edit_question'] ?? 0);
+$editQuestion  = null;
+foreach ($questions as $q) {
+    if ((int)$q['id'] === $editQid) { $editQuestion = $q; break; }
+}
+$editOpts = [];
+$editCorrectIdx = -1;
+if ($editQuestion) {
+    foreach ($editQuestion['options'] as $i => $o) {
+        $editOpts[$i] = $o;
+        if ($o['is_correct']) $editCorrectIdx = $i;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="hu">
@@ -205,10 +259,17 @@ $questions = getQuizQuestions($id);
                     </div>
                 </div>
 
-                <div class="form-group" style="max-width:300px">
-                    <label>Teszt minimum eredmény (%):</label>
-                    <input type="number" name="quiz_pass_percent" min="0" max="100" value="<?= (int)$type['quiz_pass_percent'] ?>">
-                    <small>Ha nincs egyetlen kérdés sem, a teszt lépés automatikusan kimarad.</small>
+                <div class="form-row" style="max-width:500px">
+                    <div class="form-group">
+                        <label>Teszt minimum eredmény (%):</label>
+                        <input type="number" name="quiz_pass_percent" min="0" max="100" value="<?= (int)$type['quiz_pass_percent'] ?>">
+                        <small>Ha nincs egyetlen kérdés sem, a teszt lépés automatikusan kimarad.</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Sorrend a választón:</label>
+                        <input type="number" name="sort_order" value="<?= (int)$type['sort_order'] ?>">
+                        <small>Kisebb szám kerül előrébb a látogatói választón.</small>
+                    </div>
                 </div>
                 <label class="checkbox-label" style="margin-bottom:1rem">
                     <input type="checkbox" name="is_active" value="1" <?= $type['is_active'] ? 'checked' : '' ?>>
@@ -272,8 +333,10 @@ $questions = getQuizQuestions($id);
                                     </div>
                                 <?php endforeach; ?>
                             </td>
-                            <td>
-                                <form method="POST" onsubmit="return confirm('Törli ezt a kérdést?')">
+                            <td class="actions">
+                                <a href="/admin/visit_type_edit.php?id=<?= $id ?>&edit_question=<?= $q['id'] ?>#question-form"
+                                   class="btn btn-sm btn-secondary"><?= icon('edit') ?></a>
+                                <form method="POST" onsubmit="return confirm('Törli ezt a kérdést?')" style="display:inline">
                                     <input type="hidden" name="csrf_token" value="<?= e($csrf) ?>">
                                     <input type="hidden" name="question_id" value="<?= $q['id'] ?>">
                                     <button type="submit" name="delete_question" class="btn btn-sm btn-danger"><?= icon('trash') ?></button>
@@ -288,26 +351,36 @@ $questions = getQuizQuestions($id);
                 <p style="color:var(--gray-500);font-size:.88rem;margin-bottom:1.5rem">Még nincs egyetlen kérdés sem — a teszt lépés kimarad, amíg nincs kérdés.</p>
             <?php endif; ?>
 
-            <h4 style="margin-bottom:.75rem">Új kérdés hozzáadása</h4>
+            <h4 id="question-form" style="margin-bottom:.75rem"><?= $editQuestion ? 'Kérdés szerkesztése' : 'Új kérdés hozzáadása' ?></h4>
             <form method="POST">
                 <input type="hidden" name="csrf_token" value="<?= e($csrf) ?>">
+                <?php if ($editQuestion): ?>
+                    <input type="hidden" name="question_id" value="<?= $editQuestion['id'] ?>">
+                <?php endif; ?>
                 <div class="form-group">
                     <label>Kérdés (HU):</label>
-                    <input type="text" name="question_hu" required>
+                    <input type="text" name="question_hu" required value="<?= e($editQuestion['question_hu'] ?? '') ?>">
                 </div>
                 <div class="form-group">
                     <label>Question (EN):</label>
-                    <input type="text" name="question_en">
+                    <input type="text" name="question_en" value="<?= e($editQuestion['question_en'] ?? '') ?>">
                 </div>
                 <p style="font-size:.82rem;color:var(--gray-500);margin-bottom:.5rem">Adja meg a válaszlehetőségeket (min. 2), és jelölje be a rádiógombbal a helyeset:</p>
                 <?php for ($i = 0; $i < 5; $i++): ?>
                 <div class="form-row" style="align-items:center;margin-bottom:.5rem">
-                    <input type="radio" name="correct_option" value="<?= $i ?>" style="width:auto;flex:0" <?= $i === 0 ? 'required' : '' ?>>
-                    <input type="text" name="option_hu[]" placeholder="<?= $i + 1 ?>. válasz (HU)" style="flex:1">
-                    <input type="text" name="option_en[]" placeholder="<?= $i + 1 ?>. answer (EN)" style="flex:1">
+                    <input type="radio" name="correct_option" value="<?= $i ?>" style="width:auto;flex:0"
+                           <?= $i === 0 ? 'required' : '' ?>
+                           <?= $i === $editCorrectIdx ? 'checked' : '' ?>>
+                    <input type="text" name="option_hu[]" placeholder="<?= $i + 1 ?>. válasz (HU)" style="flex:1" value="<?= e($editOpts[$i]['option_hu'] ?? '') ?>">
+                    <input type="text" name="option_en[]" placeholder="<?= $i + 1 ?>. answer (EN)" style="flex:1" value="<?= e($editOpts[$i]['option_en'] ?? '') ?>">
                 </div>
                 <?php endfor; ?>
-                <button type="submit" name="add_question" class="btn btn-primary" style="margin-top:.5rem"><?= icon('plus') ?> Kérdés hozzáadása</button>
+                <?php if ($editQuestion): ?>
+                    <button type="submit" name="update_question" class="btn btn-primary" style="margin-top:.5rem"><?= icon('check') ?> Kérdés mentése</button>
+                    <a href="/admin/visit_type_edit.php?id=<?= $id ?>#question-form" class="btn btn-ghost" style="margin-top:.5rem">Mégse</a>
+                <?php else: ?>
+                    <button type="submit" name="add_question" class="btn btn-primary" style="margin-top:.5rem"><?= icon('plus') ?> Kérdés hozzáadása</button>
+                <?php endif; ?>
             </form>
         </div>
 
