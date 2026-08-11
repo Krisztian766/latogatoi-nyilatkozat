@@ -93,6 +93,16 @@ $visitType = !empty($d['visit_type_id']) ? getVisitType((int)$d['visit_type_id']
             filter: brightness(0) invert(1);
         }
 
+        .doc-header .logo .company-name {
+            display: block;
+            margin-top: 6px;
+            font-size: 7.5pt;
+            font-weight: 700;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,.75);
+        }
+
         .doc-header .doc-title {
             text-align: right;
             flex-shrink: 0;
@@ -332,6 +342,9 @@ $visitType = !empty($d['visit_type_id']) ? getVisitType((int)$d['visit_type_id']
                 <img src="<?= $logoB64 ?>" alt="Logo">
             <?php else: ?>
                 <div style="width:160px"></div>
+            <?php endif; ?>
+            <?php $companyName = getSetting('company_name'); if ($companyName): ?>
+                <span class="company-name"><?= e($companyName) ?></span>
             <?php endif; ?>
         </div>
         <div class="doc-title">

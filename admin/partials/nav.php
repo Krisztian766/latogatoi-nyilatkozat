@@ -2,7 +2,7 @@
 <nav class="admin-nav" id="adminNav">
     <div class="nav-left">
         <img src="/assets/logo.png" alt="Logo" class="nav-logo">
-        <span class="nav-brand">Admin Panel</span>
+        <span class="nav-brand"><?= e(getSetting('company_name', 'Admin Panel')) ?></span>
     </div>
 
     <button class="nav-toggle" id="navToggle" aria-label="Menü">

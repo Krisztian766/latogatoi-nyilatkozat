@@ -72,7 +72,12 @@ $langParam = '?lang=' . $lang;
 <body>
 
 <div class="page-top">
-    <img src="/assets/logo.png" alt="Logo" class="site-logo">
+    <div class="brand">
+        <img src="/assets/logo.png" alt="Logo" class="site-logo">
+        <?php $companyName = getSetting('company_name'); if ($companyName): ?>
+            <span class="brand-name"><?= e($companyName) ?></span>
+        <?php endif; ?>
+    </div>
     <div class="lang-switcher">
         <a href="<?= $langParam ?>" class="lang-btn <?= $lang==='hu' ? 'active' : '' ?>"
            onclick="setLang('hu'); return false;">HU</a>

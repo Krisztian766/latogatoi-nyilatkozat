@@ -60,6 +60,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body class="admin-login-page">
 <div class="container">
     <div class="form-card login-card">
+        <?php $companyName = getSetting('company_name'); if ($companyName): ?>
+            <p class="login-eyebrow"><?= e($companyName) ?></p>
+        <?php endif; ?>
         <h1 style="font-size:1.5rem;display:flex;align-items:center;gap:.5rem"><?= icon('lock') ?> Belépés szükséges</h1>
         <p style="font-size:.88rem;color:var(--gray-500);margin-bottom:1rem">Ez egy belső, céges rendszer. Kérjük adja meg a hozzáférési jelszót.</p>
         <?php if ($error): ?>

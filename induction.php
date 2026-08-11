@@ -55,7 +55,12 @@ if (!$ind) {
     </head>
     <body>
     <div class="page-top">
-        <img src="/assets/logo.png" alt="Logo" class="site-logo">
+        <div class="brand">
+            <img src="/assets/logo.png" alt="Logo" class="site-logo">
+            <?php $companyName = getSetting('company_name'); if ($companyName): ?>
+                <span class="brand-name"><?= e($companyName) ?></span>
+            <?php endif; ?>
+        </div>
         <div class="lang-switcher">
             <a href="?lang=hu" class="lang-btn <?= $lang==='hu'?'active':'' ?>">HU</a>
             <a href="?lang=en" class="lang-btn <?= $lang==='en'?'active':'' ?>">EN</a>
@@ -163,7 +168,12 @@ $docBody  = $lang === 'en' && trim((string)$type['doc_content_en']) !== '' ? $ty
 </head>
 <body>
 <div class="page-top">
-    <img src="/assets/logo.png" alt="Logo" class="site-logo">
+    <div class="brand">
+        <img src="/assets/logo.png" alt="Logo" class="site-logo">
+        <?php $companyName = getSetting('company_name'); if ($companyName): ?>
+            <span class="brand-name"><?= e($companyName) ?></span>
+        <?php endif; ?>
+    </div>
     <div class="lang-switcher">
         <a href="?lang=hu" class="lang-btn <?= $lang==='hu'?'active':'' ?>">HU</a>
         <a href="?lang=en" class="lang-btn <?= $lang==='en'?'active':'' ?>">EN</a>
