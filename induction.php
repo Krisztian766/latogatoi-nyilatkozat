@@ -96,6 +96,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['induction']['doc_done'] = true;
         header('Location: /induction.php?lang=' . $lang);
         exit;
+    } elseif (isset($_POST['go_back'])) {
+        // Lets a visitor who can't answer the quiz jump back to re-watch/re-read
+        // the previous step. Only clears that one step's flag — earlier steps
+        // (e.g. an already-watched video) stay completed.
+        $target = $_POST['target_step'] ?? '';
+        if ($target === 'video') {
+            $_SESSION['induction']['video_done'] = false;
+        } elseif ($target === 'document') {
+            $_SESSION['induction']['doc_done'] = false;
+        }
+        header('Location: /induction.php?lang=' . $lang);
+        exit;
     } elseif (isset($_POST['submit_quiz'])) {
         $answers = [];
         foreach (($_POST['answers'] ?? []) as $qid => $optId) {
@@ -160,6 +172,17 @@ $docBody  = $lang === 'en' && trim((string)$type['doc_content_en']) !== '' ? $ty
             <?php endforeach; ?>
         </div>
         <h2 style="text-align:center;margin:1rem 0 1.5rem"><?= e($typeName) ?></h2>
+
+        <?php if ($stepIndex > 0): ?>
+            <?php $prevStep = $steps[$stepIndex - 1]; ?>
+            <form method="POST" style="margin-bottom:1rem">
+                <input type="hidden" name="csrf_token" value="<?= e($csrf) ?>">
+                <input type="hidden" name="target_step" value="<?= e($prevStep['key']) ?>">
+                <button type="submit" name="go_back" class="btn btn-ghost btn-full">
+                    <?= icon('arrow-left') ?> <?= e(sprintf($t['ind_btn_back'], $prevStep['label'])) ?>
+                </button>
+            </form>
+        <?php endif; ?>
 
         <?php if ($step === 'video'): ?>
             <p style="text-align:center;color:var(--gray-500);margin-bottom:1rem"><?= e($t['ind_video_hint']) ?></p>

@@ -35,6 +35,7 @@ return [
         'ind_quiz_pass'       => 'Sikeres teszt! (%d/%d helyes válasz)',
         'ind_quiz_retry'      => 'Újrapróbálkozás',
         'ind_required'        => 'Kötelező megválaszolni!',
+        'ind_btn_back'        => 'Vissza: %s',
     ],
     'en' => [
         'section_personal'    => 'Personal Information',
@@ -71,5 +72,6 @@ return [
         'ind_quiz_pass'       => 'Test passed! (%d/%d correct)',
         'ind_quiz_retry'      => 'Try again',
         'ind_required'        => 'This field is required!',
+        'ind_btn_back'        => 'Back: %s',
     ],
 ];
