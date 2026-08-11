@@ -1129,6 +1129,22 @@ h3 {
     margin-bottom: 1.25rem;
 }
 
+.type-pill {
+    display: inline-block;
+    font-size: .72rem;
+    font-weight: 700;
+    padding: .15rem .55rem;
+    border-radius: 999px;
+    letter-spacing: .02em;
+    white-space: nowrap;
+}
+.type-pill-0 { background: #EEF2F8; color: #1A2E4A; }
+.type-pill-1 { background: #E0F2FE; color: #075985; }
+.type-pill-2 { background: #FCE7F3; color: #9D174D; }
+.type-pill-3 { background: #ECFCCB; color: #3F6212; }
+.type-pill-4 { background: #FEF3C7; color: #92400E; }
+.type-pill-5 { background: #EDE9FE; color: #5B21B6; }
+
 .visit-type-change {
     color: var(--gray-500);
     text-decoration: underline;

@@ -2,11 +2,13 @@
 require_once __DIR__ . '/../includes/functions.php';
 requireAdmin();
 
-$db     = getDB();
-$search = trim($_GET['search'] ?? '');
-$from   = trim($_GET['from'] ?? '');
-$to     = trim($_GET['to'] ?? '');
-$page   = max(1, (int)($_GET['page'] ?? 1));
+$db       = getDB();
+$search   = trim($_GET['search'] ?? '');
+$from     = trim($_GET['from'] ?? '');
+$to       = trim($_GET['to'] ?? '');
+$typeFilter = trim($_GET['type'] ?? ''); // '' = all, 'none' = no type, else a visit_type id
+$page     = max(1, (int)($_GET['page'] ?? 1));
+$allTypes = $db->query('SELECT id, name_hu FROM visit_types ORDER BY sort_order, id')->fetchAll();
 $perPage = 25;
 $offset  = ($page - 1) * $perPage;
 
@@ -62,6 +64,12 @@ if ($search !== '') {
 }
 if ($from !== '') { $where[] = 'visit_date >= ?'; $params[] = $from; }
 if ($to   !== '') { $where[] = 'visit_date <= ?'; $params[] = $to; }
+if ($typeFilter === 'none') {
+    $where[] = 'visit_type_id IS NULL';
+} elseif ($typeFilter !== '' && ctype_digit($typeFilter)) {
+    $where[] = 'visit_type_id = ?';
+    $params[] = (int)$typeFilter;
+}
 $whereSQL = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 
 $countStmt  = $db->prepare("SELECT COUNT(*) FROM declarations {$whereSQL}");
@@ -70,7 +78,7 @@ $total      = (int)$countStmt->fetchColumn();
 $totalPages = max(1, (int)ceil($total / $perPage));
 
 $listStmt = $db->prepare("SELECT d.id, d.name, d.company, d.contact, d.visit_date, d.created_at,
-                                  d.quiz_score, d.quiz_total, d.quiz_passed, vt.name_hu AS visit_type_name
+                                  d.quiz_score, d.quiz_total, d.quiz_passed, d.visit_type_id, vt.name_hu AS visit_type_name
                            FROM declarations d
                            LEFT JOIN visit_types vt ON vt.id = d.visit_type_id
                            {$whereSQL} ORDER BY d.created_at DESC LIMIT {$perPage} OFFSET {$offset}");
@@ -168,17 +176,24 @@ $rows = $listStmt->fetchAll();
     <div class="toolbar">
         <form method="GET" class="filter-form">
             <input type="text" name="search" value="<?= e($search) ?>" placeholder="Keresés névre, cégre...">
+            <select name="type" title="Típus">
+                <option value="">Minden típus</option>
+                <?php foreach ($allTypes as $vt): ?>
+                    <option value="<?= $vt['id'] ?>" <?= $typeFilter === (string)$vt['id'] ? 'selected' : '' ?>><?= e($vt['name_hu']) ?></option>
+                <?php endforeach; ?>
+                <option value="none" <?= $typeFilter === 'none' ? 'selected' : '' ?>>Nincs típus</option>
+            </select>
             <input type="date" name="from" value="<?= e($from) ?>" title="Dátumtól">
             <input type="date" name="to"   value="<?= e($to) ?>"   title="Dátumig">
             <button type="submit" class="btn btn-secondary"><?= icon('search') ?> Szűrés</button>
-            <?php if ($search || $from || $to): ?>
+            <?php if ($search || $from || $to || $typeFilter !== ''): ?>
                 <a href="/admin/dashboard.php" class="btn btn-ghost"><?= icon('x') ?> Törlés</a>
             <?php endif; ?>
         </form>
         <div class="toolbar-actions">
             <a href="/admin/new.php" class="btn btn-primary"><?= icon('plus') ?> Új nyilatkozat</a>
-            <a href="/admin/export.php?<?= http_build_query(['search'=>$search,'from'=>$from,'to'=>$to]) ?>" class="btn btn-secondary"><?= icon('download') ?> CSV export</a>
-            <a href="/admin/pdf_bulk.php?<?= http_build_query(['search'=>$search,'from'=>$from,'to'=>$to]) ?>" class="btn btn-secondary" target="_blank"><?= icon('download') ?> PDF export (lista)</a>
+            <a href="/admin/export.php?<?= http_build_query(['search'=>$search,'from'=>$from,'to'=>$to,'type'=>$typeFilter]) ?>" class="btn btn-secondary"><?= icon('download') ?> CSV export</a>
+            <a href="/admin/pdf_bulk.php?<?= http_build_query(['search'=>$search,'from'=>$from,'to'=>$to,'type'=>$typeFilter]) ?>" class="btn btn-secondary" target="_blank"><?= icon('download') ?> PDF export (lista)</a>
         </div>
     </div>
 
@@ -209,9 +224,9 @@ $rows = $listStmt->fetchAll();
                     <td><?= e($r['contact']) ?></td>
                     <td>
                         <?php if ($r['visit_type_name']): ?>
-                            <div><?= e($r['visit_type_name']) ?></div>
+                            <span class="type-pill type-pill-<?= (int)$r['visit_type_id'] % 6 ?>"><?= e($r['visit_type_name']) ?></span>
                             <?php if ($r['quiz_total'] !== null): ?>
-                                <span class="compliance-badge <?= $r['quiz_passed'] ? 'badge-ok' : 'badge-warn' ?>" style="font-size:.7rem;padding:.15rem .5rem">
+                                <br><span class="compliance-badge <?= $r['quiz_passed'] ? 'badge-ok' : 'badge-warn' ?>" style="font-size:.7rem;padding:.15rem .5rem;margin-top:.25rem;display:inline-block">
                                     <?= (int)$r['quiz_score'] ?>/<?= (int)$r['quiz_total'] ?>
                                 </span>
                             <?php endif; ?>
@@ -237,7 +252,7 @@ $rows = $listStmt->fetchAll();
     <?php if ($totalPages > 1): ?>
     <div class="pagination">
         <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-            <a href="?page=<?= $i ?>&<?= http_build_query(['search'=>$search,'from'=>$from,'to'=>$to]) ?>"
+            <a href="?page=<?= $i ?>&<?= http_build_query(['search'=>$search,'from'=>$from,'to'=>$to,'type'=>$typeFilter]) ?>"
                class="<?= $i === $page ? 'active' : '' ?>"><?= $i ?></a>
         <?php endfor; ?>
     </div>

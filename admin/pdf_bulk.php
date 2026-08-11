@@ -6,6 +6,7 @@ $db     = getDB();
 $search = trim($_GET['search'] ?? '');
 $from   = trim($_GET['from'] ?? '');
 $to     = trim($_GET['to'] ?? '');
+$typeFilter = trim($_GET['type'] ?? '');
 
 $where  = [];
 $params = [];
@@ -16,6 +17,12 @@ if ($search !== '') {
 }
 if ($from !== '') { $where[] = 'visit_date >= ?'; $params[] = $from; }
 if ($to   !== '') { $where[] = 'visit_date <= ?'; $params[] = $to; }
+if ($typeFilter === 'none') {
+    $where[] = 'visit_type_id IS NULL';
+} elseif ($typeFilter !== '' && ctype_digit($typeFilter)) {
+    $where[] = 'visit_type_id = ?';
+    $params[] = (int)$typeFilter;
+}
 $whereSQL = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 
 $stmt = $db->prepare("SELECT * FROM declarations {$whereSQL} ORDER BY created_at DESC");
