@@ -27,6 +27,62 @@ function requireAdmin(): void {
     }
 }
 
+// Site-wide password gate: this public visitor kiosk and the admin login both
+// live on a public domain but are for staff/on-site use only, so they sit
+// behind a single shared password. Document e-signing (sign.php) and the
+// cron purge endpoint are deliberately NOT gated — they authenticate via
+// their own per-recipient token / CRON_SECRET and gating them would break
+// the remote-signer and the scheduled task, which have no way to enter a
+// shared password.
+function requireSiteAccess(): void {
+    if (session_status() === PHP_SESSION_NONE) session_start();
+    if (!empty($_SESSION['site_unlocked'])) return;
+
+    if (validateGateCookie($_COOKIE['site_access'] ?? '')) {
+        $_SESSION['site_unlocked'] = true;
+        return;
+    }
+
+    // No password configured yet: gate is inert rather than locking everyone out.
+    if (getSetting('site_password_hash') === '') return;
+
+    $return = $_SERVER['REQUEST_URI'] ?? '/';
+    header('Location: /gate.php?return=' . urlencode($return));
+    exit;
+}
+
+function issueGateCookie(): void {
+    $exp     = time() + 60 * 60 * 24 * 180; // 180 days, so a kiosk device stays unlocked across restarts
+    $payload = base64_encode(json_encode(['exp' => $exp]));
+    $sig     = hash_hmac('sha256', $payload, SITE_GATE_SECRET);
+    setcookie('site_access', $payload . '.' . $sig, [
+        'expires'  => $exp,
+        'path'     => '/',
+        'secure'   => true,
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ]);
+}
+
+function validateGateCookie(string $cookie): bool {
+    if ($cookie === '' || substr_count($cookie, '.') !== 1) return false;
+    [$payload, $sig] = explode('.', $cookie, 2);
+    $expected = hash_hmac('sha256', $payload, SITE_GATE_SECRET);
+    if (!hash_equals($expected, $sig)) return false;
+    $data = json_decode((string)base64_decode($payload, true), true);
+    if (!is_array($data) || empty($data['exp'])) return false;
+    return time() < (int)$data['exp'];
+}
+
+// Only ever redirect back to a same-site relative path (blocks //host and
+// scheme-based open-redirect payloads via the gate's ?return= parameter).
+function safeReturnPath(string $path): string {
+    if ($path === '' || $path[0] !== '/' || (isset($path[1]) && $path[1] === '/')) {
+        return '/';
+    }
+    return $path;
+}
+
 function generateCsrf(): string {
     if (session_status() === PHP_SESSION_NONE) session_start();
     if (empty($_SESSION['csrf_token'])) {

@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
+requireSiteAccess();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') { header('Location: /'); exit; }
 if (!verifyCsrf($_POST['csrf_token'] ?? '')) { header('Location: /?error=missing_fields'); exit; }

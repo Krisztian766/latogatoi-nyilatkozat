@@ -113,6 +113,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !verifyCsrf($_POST['csrf_token'] ??
             $success = 'Jelszó sikeresen megváltoztatva!';
         }
     }
+
+    if (isset($_POST['change_gate_password'])) {
+        $new     = $_POST['gate_new_password'] ?? '';
+        $confirm = $_POST['gate_confirm_password'] ?? '';
+        if ($new === '' || strlen($new) < 8) {
+            $error = 'A kapujelszónak legalább 8 karakter hosszúnak kell lennie!';
+        } elseif ($new !== $confirm) {
+            $error = 'A két jelszó nem egyezik!';
+        } else {
+            setSetting('site_password_hash', password_hash($new, PASSWORD_BCRYPT));
+            logAudit('gate_password_changed');
+            $success = 'Kapujelszó megváltoztatva! A korábban megjegyzett eszközök is újra be kell, hogy jelentkezzenek.';
+        }
+    }
+
+    if (isset($_POST['disable_gate'])) {
+        setSetting('site_password_hash', '');
+        logAudit('gate_disabled');
+        $success = 'Kapuvédelem kikapcsolva — az oldal szabadon elérhető jelszó nélkül.';
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -416,6 +436,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !verifyCsrf($_POST['csrf_token'] ??
                     <input type="password" name="confirm_password" required>
                 </div>
                 <button type="submit" name="change_password" class="btn btn-primary">Módosítás</button>
+            </form>
+        </div>
+
+        <!-- Site gate password -->
+        <div class="form-card">
+            <h3>Oldal kapujelszó</h3>
+            <p style="font-size:.82rem;color:var(--gray-500);margin-bottom:1rem">
+                A publikus nyilatkozat-kitöltő oldalt és az admin belépést véd&#337; megosztott jelszó
+                (a dokumentum-aláírás linkeket és a cron végpontot NEM érinti, azok saját tokennel/kulccsal védettek).
+                Jelenlegi állapot:
+                <strong><?= getSetting('site_password_hash') !== '' ? 'BEKAPCSOLVA' : 'KIKAPCSOLVA' ?></strong>
+            </p>
+            <form method="POST">
+                <input type="hidden" name="csrf_token" value="<?= e($csrf) ?>">
+                <div class="form-group">
+                    <label>Új kapujelszó:</label>
+                    <input type="password" name="gate_new_password" minlength="8" placeholder="Legalább 8 karakter">
+                </div>
+                <div class="form-group">
+                    <label>Megerősítés:</label>
+                    <input type="password" name="gate_confirm_password" minlength="8">
+                </div>
+                <button type="submit" name="change_gate_password" class="btn btn-primary">Kapujelszó mentése</button>
+            </form>
+            <form method="POST" style="margin-top:.6rem" onsubmit="return confirm('Biztosan kikapcsolja a kapuvédelmet? Az oldal ezután bárki számára szabadon elérhető lesz!')">
+                <input type="hidden" name="csrf_token" value="<?= e($csrf) ?>">
+                <button type="submit" name="disable_gate" class="btn btn-danger btn-sm">Kapuvédelem kikapcsolása</button>
             </form>
         </div>
 

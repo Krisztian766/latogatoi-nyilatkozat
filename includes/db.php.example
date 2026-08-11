@@ -15,6 +15,11 @@ define('SMTP_FROM_NAME', 'Látogatói Rendszer');
 // Secret used to authorize HTTP-triggered cron scripts (e.g. cron/purge_expired.php)
 define('CRON_SECRET', 'change-me-to-a-random-string');
 
+// Secret used to sign the "remember this device" cookie issued by gate.php
+// (the shared site-password gate in front of the public kiosk + admin login).
+// Independent from CRON_SECRET so rotating one doesn't invalidate the other.
+define('SITE_GATE_SECRET', 'change-me-to-a-different-random-string');
+
 function getDB(): PDO {
     static $pdo = null;
     if ($pdo === null) {
