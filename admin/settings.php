@@ -4,8 +4,11 @@ requireAdmin();
 
 $error   = '';
 $success = '';
+$csrf    = generateCsrf();
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !verifyCsrf($_POST['csrf_token'] ?? '')) {
+    $error = 'Érvénytelen kérés (CSRF). Próbálja újra.';
+} elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (isset($_POST['save_gdpr'])) {
         setSetting('gdpr_checkbox_label_hu', trim($_POST['gdpr_checkbox_label_hu'] ?? ''));
@@ -49,9 +52,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (isset($_POST['save_email'])) {
-        setSetting('notification_email',    trim($_POST['notification_email'] ?? ''));
-        setSetting('notification_email_cc', trim($_POST['notification_email_cc'] ?? ''));
-        $success = 'Email beállítások mentve!';
+        $to = trim($_POST['notification_email'] ?? '');
+        $cc = trim($_POST['notification_email_cc'] ?? '');
+        if (($to !== '' && !filter_var($to, FILTER_VALIDATE_EMAIL)) ||
+            ($cc !== '' && !filter_var($cc, FILTER_VALIDATE_EMAIL))) {
+            $error = 'Érvénytelen email cím formátum!';
+        } else {
+            setSetting('notification_email',    $to);
+            setSetting('notification_email_cc', $cc);
+            $success = 'Email beállítások mentve!';
+        }
     }
 
     if (isset($_POST['clear_email'])) {
@@ -129,6 +139,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="form-card">
             <h3>Általános</h3>
             <form method="POST">
+                <input type="hidden" name="csrf_token" value="<?= e($csrf) ?>">
                 <div class="lang-tabs-wrap">
                     <div class="lang-tabs">
                         <button type="button" class="lang-tab active" data-tab="hu-gen">Magyar</button>
@@ -159,6 +170,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="form-card settings-full">
             <h3>GDPR &ndash; Adatkezelési beállítások</h3>
             <form method="POST">
+                <input type="hidden" name="csrf_token" value="<?= e($csrf) ?>">
                 <div class="form-group" style="max-width:300px">
                     <label>Adatmegőrzési idő (napokban):</label>
                     <input type="number" name="retention_days" min="30" max="3650"
@@ -220,6 +232,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </table>
             <?php if ($expiredCount > 0): ?>
             <form method="POST" onsubmit="return confirm('Biztosan törli az összes lejárt nyilatkozatot? Ez visszafordíthatatlan!')">
+                <input type="hidden" name="csrf_token" value="<?= e($csrf) ?>">
                 <button type="submit" name="cleanup_expired" class="btn btn-danger">
                     <?= icon('trash') ?> <?= $expiredCount ?> lejárt rekord törlése
                 </button>
@@ -233,6 +246,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="form-card">
             <h3>Mezőfeliratok szerkesztése</h3>
             <form method="POST">
+                <input type="hidden" name="csrf_token" value="<?= e($csrf) ?>">
                 <div class="lang-tabs-wrap">
                     <div class="lang-tabs">
                         <button type="button" class="lang-tab active" data-tab="hu-fields">Magyar</button>
@@ -266,6 +280,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 Minden bekezdés külön szerkeszthető mindkét nyelven. Ha üres, nem jelenik meg.
             </p>
             <form method="POST">
+                <input type="hidden" name="csrf_token" value="<?= e($csrf) ?>">
                 <div class="lang-tabs-wrap">
                     <div class="lang-tabs">
                         <button type="button" class="lang-tab active" data-tab="hu-decl">Magyar</button>
@@ -310,6 +325,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <?php if ($curEmail): ?>
                         <span class="notify-email"><?= e($curEmail) ?></span>
                         <form method="POST" style="display:inline">
+                            <input type="hidden" name="csrf_token" value="<?= e($csrf) ?>">
                             <button type="submit" name="clear_email" class="btn-inline-del"
                                     onclick="return confirm('Törli az értesítési email címet?')"
                                     title="Törlés"><?= icon('x') ?></button>
@@ -323,6 +339,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <?php if ($curCc): ?>
                         <span class="notify-email"><?= e($curCc) ?></span>
                         <form method="POST" style="display:inline">
+                            <input type="hidden" name="csrf_token" value="<?= e($csrf) ?>">
                             <button type="submit" name="clear_email_cc" class="btn-inline-del"
                                     onclick="return confirm('Törli a CC email címet?')"
                                     title="Törlés"><?= icon('x') ?></button>
@@ -334,6 +351,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
 
             <form method="POST" style="margin-top:1rem">
+                <input type="hidden" name="csrf_token" value="<?= e($csrf) ?>">
                 <div class="form-group">
                     <label>Értesítési cím módosítása (TO):</label>
                     <input type="email" name="notification_email" value="<?= e($curEmail) ?>" placeholder="iroda@ceg.hu">
@@ -356,6 +374,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 A PDF láblécében és fejlécében megjelenő adatok.
             </p>
             <form method="POST">
+                <input type="hidden" name="csrf_token" value="<?= e($csrf) ?>">
                 <div class="form-row">
                     <div class="form-group">
                         <label>Dokumentum azonosító:</label>
@@ -383,6 +402,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <h3>Jelszó módosítása</h3>
             <p style="font-size:.82rem;color:var(--gray-500);margin-bottom:1rem">Bejelentkezve: <strong><?= e($_SESSION['admin_username']) ?></strong></p>
             <form method="POST">
+                <input type="hidden" name="csrf_token" value="<?= e($csrf) ?>">
                 <div class="form-group">
                     <label>Jelenlegi jelszó:</label>
                     <input type="password" name="current_password" required>

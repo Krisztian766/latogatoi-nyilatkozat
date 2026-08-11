@@ -41,6 +41,11 @@ function verifyCsrf(string $token): bool {
 }
 
 function sendSmtpEmail(string $to, string $subject, string $body): bool {
+    if (!filter_var($to, FILTER_VALIDATE_EMAIL)) {
+        error_log("sendSmtpEmail: refusing malformed recipient address: {$to}");
+        return false;
+    }
+
     $host     = SMTP_HOST;
     $port     = SMTP_PORT;
     $username = SMTP_USER;
@@ -179,12 +184,41 @@ function logAudit(string $action, ?int $recordId = null, string $details = ''): 
 }
 
 function getClientIp(): string {
-    foreach (['HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP', 'REMOTE_ADDR'] as $key) {
-        if (!empty($_SERVER[$key])) {
-            return explode(',', $_SERVER[$key])[0];
-        }
+    // Deliberately ignores client-supplied X-Forwarded-For/X-Real-IP headers:
+    // this app is not known to sit behind a trusted reverse proxy, and trusting
+    // those headers let an attacker spoof a fresh IP per request to bypass both
+    // the submission rate limiter and the admin login lockout.
+    return $_SERVER['REMOTE_ADDR'] ?? '';
+}
+
+function loadPdfBrandingSettings(): array {
+    $paraHu = [];
+    $paraEn = [];
+    for ($i = 1; $i <= 4; $i++) {
+        $ph = getSetting("decl_para_{$i}_hu");
+        $pe = getSetting("decl_para_{$i}_en");
+        if (trim($ph)) $paraHu[] = $ph;
+        if (trim($pe)) $paraEn[] = $pe;
     }
-    return '';
+
+    $logoPath = __DIR__ . '/../assets/logo.png';
+    $logoB64  = file_exists($logoPath) ? 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath)) : '';
+
+    return [
+        'paraHu'    => $paraHu,
+        'paraEn'    => $paraEn,
+        'fName'     => getSetting('field_name_label_hu',    'Név / Name'),
+        'fCompany'  => getSetting('field_company_label_hu', 'Képviselt Cég / Company'),
+        'fContact'  => getSetting('field_contact_label_hu', 'Helyi kapcsolattartó / Who are you visiting?'),
+        'titleHu'   => getSetting('site_title_hu', 'Látogatói nyilatkozat'),
+        'titleEn'   => getSetting('site_title_en', 'Visitor Declaration'),
+        'docDate'   => date('Y-m-d'),
+        'docId'     => getSetting('pdf_doc_id',      'F76'),
+        'docVer'    => getSetting('pdf_doc_ver',     'v8'),
+        'prepared'  => getSetting('pdf_prepared_by', ''),
+        'approved'  => getSetting('pdf_approved_by', ''),
+        'logoB64'   => $logoB64,
+    ];
 }
 
 function getRetentionDate(): string {

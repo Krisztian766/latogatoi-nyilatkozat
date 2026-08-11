@@ -30,14 +30,25 @@ header('Pragma: no-cache');
 $out = fopen('php://output', 'w');
 fprintf($out, chr(0xEF) . chr(0xBB) . chr(0xBF)); // UTF-8 BOM for Excel
 
+// Neutralize CSV/DDE formula injection: a cell value starting with =, +, -, @, tab
+// or CR would be evaluated as a formula by Excel/LibreOffice when the visitor
+// controls name/company/contact freely on the public sign-in form.
+$csvSafe = function ($value) {
+    $value = (string)$value;
+    if ($value !== '' && strpbrk($value[0], "=+-@\t\r") !== false) {
+        return "'" . $value;
+    }
+    return $value;
+};
+
 fputcsv($out, ['ID', 'Név / Name', 'Cég / Company', 'Kapcsolattartó / Contact', 'Látogatás dátuma / Visit Date', 'Beküldve / Submitted At'], ';');
 
 foreach ($rows as $r) {
     fputcsv($out, [
         $r['id'],
-        $r['name'],
-        $r['company'],
-        $r['contact'],
+        $csvSafe($r['name']),
+        $csvSafe($r['company']),
+        $csvSafe($r['contact']),
         $r['visit_date'],
         $r['created_at'],
     ], ';');

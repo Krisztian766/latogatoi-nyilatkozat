@@ -8,7 +8,9 @@ $success = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    if (isset($_POST['add_user'])) {
+    if (!verifyCsrf($_POST['csrf_token'] ?? '')) {
+        $error = 'Érvénytelen kérés (CSRF). Próbálja újra.';
+    } elseif (isset($_POST['add_user'])) {
         $username  = trim($_POST['username'] ?? '');
         $password  = $_POST['password'] ?? '';
         $password2 = $_POST['password2'] ?? '';
@@ -30,9 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = 'Ez a felhasználónév már foglalt!';
             }
         }
-    }
-
-    if (isset($_POST['reset_password'])) {
+    } elseif (isset($_POST['reset_password'])) {
         $uid      = (int)$_POST['user_id'];
         $password = $_POST['new_password'] ?? '';
         if (strlen($password) < 6) {
@@ -46,18 +46,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 if (isset($_GET['delete'])) {
-    $uid = (int)$_GET['delete'];
-    $stmt = $db->prepare('SELECT username FROM admin_users WHERE id=?');
-    $stmt->execute([$uid]);
-    $target = $stmt->fetchColumn();
-    if ($target && $target !== $_SESSION['admin_username']) {
-        $db->prepare('DELETE FROM admin_users WHERE id=?')->execute([$uid]);
-        $success = 'Felhasználó törölve: ' . htmlspecialchars($target);
+    if (!verifyCsrf($_GET['token'] ?? '')) {
+        $error = 'Érvénytelen kérés (CSRF). Próbálja újra.';
     } else {
-        $error = 'Nem törölheti saját fiókját!';
+        $uid = (int)$_GET['delete'];
+        $stmt = $db->prepare('SELECT username FROM admin_users WHERE id=?');
+        $stmt->execute([$uid]);
+        $target = $stmt->fetchColumn();
+        if ($target && $target !== $_SESSION['admin_username']) {
+            $db->prepare('DELETE FROM admin_users WHERE id=?')->execute([$uid]);
+            $success = 'Felhasználó törölve: ' . htmlspecialchars($target);
+        } else {
+            $error = 'Nem törölheti saját fiókját!';
+        }
     }
 }
 
+$csrf  = generateCsrf();
 $users = $db->query('SELECT id, username, created_at FROM admin_users ORDER BY created_at')->fetchAll();
 ?>
 <!DOCTYPE html>
@@ -106,6 +111,7 @@ $users = $db->query('SELECT id, username, created_at FROM admin_users ORDER BY c
                         <td><?= e(substr($u['created_at'], 0, 16)) ?></td>
                         <td>
                             <form method="POST" style="display:flex;gap:.4rem;align-items:center">
+                                <input type="hidden" name="csrf_token" value="<?= e($csrf) ?>">
                                 <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
                                 <input type="password" name="new_password" placeholder="Új jelszó" minlength="6"
                                        style="padding:.3rem .6rem;font-size:.82rem;width:130px;border:1px solid var(--border);border-radius:3px">
@@ -114,7 +120,7 @@ $users = $db->query('SELECT id, username, created_at FROM admin_users ORDER BY c
                         </td>
                         <td>
                             <?php if ($u['username'] !== $_SESSION['admin_username']): ?>
-                                <a href="?delete=<?= $u['id'] ?>"
+                                <a href="?delete=<?= $u['id'] ?>&token=<?= e($csrf) ?>"
                                    class="btn btn-sm btn-danger"
                                    onclick="return confirm('Biztosan törli: <?= e($u['username']) ?>?')"><?= icon('trash') ?> Töröl</a>
                             <?php else: ?>
@@ -131,6 +137,7 @@ $users = $db->query('SELECT id, username, created_at FROM admin_users ORDER BY c
         <div class="form-card">
             <h3>Új admin felhasználó</h3>
             <form method="POST">
+                <input type="hidden" name="csrf_token" value="<?= e($csrf) ?>">
                 <div class="form-group">
                     <label>Felhasználónév:</label>
                     <input type="text" name="username" required pattern="[a-zA-Z0-9_]{3,50}"

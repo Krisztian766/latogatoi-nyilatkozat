@@ -22,29 +22,7 @@ $stmt = $db->prepare("SELECT * FROM declarations {$whereSQL} ORDER BY created_at
 $stmt->execute($params);
 $declarations = $stmt->fetchAll();
 
-$paraHu = [];
-$paraEn = [];
-for ($i = 1; $i <= 4; $i++) {
-    $ph = getSetting("decl_para_{$i}_hu");
-    $pe = getSetting("decl_para_{$i}_en");
-    if (trim($ph)) $paraHu[] = $ph;
-    if (trim($pe)) $paraEn[] = $pe;
-}
-
-$fName    = getSetting('field_name_label_hu',    'Név / Name');
-$fCompany = getSetting('field_company_label_hu', 'Képviselt Cég / Company');
-$fContact = getSetting('field_contact_label_hu', 'Helyi kapcsolattartó / Who are you visiting?');
-$titleHu  = getSetting('site_title_hu', 'Látogatói nyilatkozat');
-$titleEn  = getSetting('site_title_en', 'Visitor Declaration');
-
-$docDate  = date('Y-m-d');
-$docId    = getSetting('pdf_doc_id',      'F76');
-$docVer   = getSetting('pdf_doc_ver',     'v8');
-$prepared = getSetting('pdf_prepared_by', '');
-$approved = getSetting('pdf_approved_by', '');
-
-$logoPath = __DIR__ . '/../assets/logo.png';
-$logoB64  = file_exists($logoPath) ? 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath)) : '';
+extract(loadPdfBrandingSettings());
 ?>
 <!DOCTYPE html>
 <html lang="hu">

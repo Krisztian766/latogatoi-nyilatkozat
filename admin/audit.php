@@ -12,7 +12,6 @@ $offset = ($page - 1) * $per;
 $where  = $filter ? 'WHERE action LIKE ? OR admin_username LIKE ?' : '';
 $params = $filter ? ["%$filter%", "%$filter%"] : [];
 
-$total = (int)$db->prepare("SELECT COUNT(*) FROM audit_log $where")->execute($params) ? 0 : 0;
 $cs = $db->prepare("SELECT COUNT(*) FROM audit_log $where"); $cs->execute($params);
 $total = (int)$cs->fetchColumn();
 $pages = max(1, (int)ceil($total / $per));
