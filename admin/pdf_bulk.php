@@ -158,8 +158,6 @@ extract(loadPdfBrandingSettings());
         .sig-img { display: block; max-width: 260px; max-height: 90px; border: 1px solid #E2E8F0; border-radius: 4px; background: #fff; padding: 3px; }
 
         .doc-footer {
-            position: absolute;
-            bottom: 0; left: 0; right: 0;
             background: #F8FAFC;
             border-top: 2px solid #1E3A6E;
             padding: 7px 20mm;
@@ -183,10 +181,33 @@ extract(loadPdfBrandingSettings());
                 page-break-after: always;
             }
             .page:last-child { page-break-after: auto; }
-            .doc-body { padding: 10mm 16mm 26mm; }
-            .doc-header { padding: 14px 16mm; }
-            .doc-strip  { padding: 5px 16mm; }
-            .doc-footer { padding: 6px 16mm; }
+            .doc-body { padding: 6mm 14mm 10mm; }
+
+            .doc-header {
+                padding: 8px 16mm;
+                background: #fff !important;
+                border-bottom: 3px solid #1E3A6E;
+            }
+            .doc-header .logo img { filter: none; max-height: 52px; }
+            .doc-header .logo .company-name { color: #1E3A6E !important; }
+            .doc-header .doc-title h1 { color: #1E3A6E; font-size: 15pt; }
+            .doc-header .doc-title .subtitle { color: #4B5563; }
+
+            .doc-strip  { padding: 4px 16mm; }
+            .doc-strip .badge {
+                background: #fff !important;
+                color: #1E3A6E;
+                border: 1px solid #1E3A6E;
+            }
+
+            .section-head { margin: 10px 0 6px; }
+            .info-table td { padding: 4px 10px; }
+            .decl-box { padding: 8px 12px; line-height: 1.42; }
+            .decl-box p { margin-bottom: 6px; }
+            .sign-row { margin-top: 6px; }
+            .sign-line { min-height: 34px; }
+            .doc-footer { padding: 5px 16mm; }
+
             @page { size: A4 portrait; margin: 0; }
         }
     </style>
