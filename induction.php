@@ -98,8 +98,13 @@ $hasVideo  = !empty($type['video_path']);
 $hasDoc    = trim((string)$type['doc_content_hu']) !== '' || trim((string)$type['doc_content_en']) !== '';
 $hasQuiz   = count($questions) > 0;
 
+$minVideoSeconds = 5;
+$docText       = $lang === 'en' && trim((string)$type['doc_content_en']) !== '' ? $type['doc_content_en'] : $type['doc_content_hu'];
+$minDocSeconds = $hasDoc ? minReadSeconds((string)$docText) : 0;
+
 $quizError  = '';
 $quizResult = null;
+$stepError  = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!verifyCsrf($_POST['csrf_token'] ?? '')) {
@@ -109,22 +114,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // playing (e.g. via devtools): require a minimum elapsed time since
         // the video step was first shown. Not a real watch-time proof — the
         // 'ended' event driving the button is the primary gate — but it
-        // closes the trivial one-request bypass.
+        // closes the trivial one-request bypass. The client-side timer below
+        // is kept in sync with this same threshold so the button doesn't
+        // *look* ready before the server will actually accept it.
         $startedAt = $_SESSION['induction']['step_started_at']['video'] ?? 0;
-        if (time() - $startedAt >= 5) {
+        if (time() - $startedAt >= $minVideoSeconds) {
             $_SESSION['induction']['video_done'] = true;
             header('Location: /induction.php?lang=' . $lang);
             exit;
         }
-        // else: fall through and re-render the video step unmarked
+        $stepError = $t['ind_too_early'];
     } elseif (isset($_POST['mark_doc_done'])) {
-        $docText = $lang === 'en' && trim((string)$type['doc_content_en']) !== '' ? $type['doc_content_en'] : $type['doc_content_hu'];
         $startedAt = $_SESSION['induction']['step_started_at']['document'] ?? 0;
-        if (time() - $startedAt >= minReadSeconds((string)$docText)) {
+        if (time() - $startedAt >= $minDocSeconds) {
             $_SESSION['induction']['doc_done'] = true;
             header('Location: /induction.php?lang=' . $lang);
             exit;
         }
+        $stepError = $t['ind_too_early'];
     } elseif (isset($_POST['go_back'])) {
         // Lets a visitor who can't answer the quiz jump back to re-watch/re-read
         // the previous step. Only clears that one step's flag — earlier steps
@@ -181,6 +188,18 @@ $stepIndex = array_search($step, array_column($steps, 'key'), true);
 $typeName = $lang === 'en' && trim($type['name_en']) !== '' ? $type['name_en'] : $type['name_hu'];
 $docTitle = $lang === 'en' && trim($type['doc_title_en']) !== '' ? $type['doc_title_en'] : $type['doc_title_hu'];
 $docBody  = $lang === 'en' && trim((string)$type['doc_content_en']) !== '' ? $type['doc_content_en'] : $type['doc_content_hu'];
+
+// How many seconds are left before the server will actually accept
+// mark_video_done/mark_doc_done — the client-side timer below is kept in
+// sync with this so the "Tovább" button never looks ready before a click
+// would actually succeed (previously the scroll/ended condition alone could
+// enable it well before the server-side dwell-time minimum was satisfied,
+// and a click then just silently re-rendered the same step with no
+// explanation).
+$stepStartedAt    = $_SESSION['induction']['step_started_at'][$step] ?? time();
+$remainingSeconds = 0;
+if ($step === 'video')    $remainingSeconds = max(0, $minVideoSeconds - (time() - $stepStartedAt));
+if ($step === 'document') $remainingSeconds = max(0, $minDocSeconds   - (time() - $stepStartedAt));
 ?>
 <!DOCTYPE html>
 <html lang="<?= $lang ?>">
@@ -233,42 +252,85 @@ $docBody  = $lang === 'en' && trim((string)$type['doc_content_en']) !== '' ? $ty
             </form>
         <?php endif; ?>
 
+        <?php if ($stepError): ?>
+            <div class="alert alert-error"><?= e($stepError) ?></div>
+        <?php endif; ?>
+
         <?php if ($step === 'video'): ?>
             <p style="text-align:center;color:var(--gray-500);margin-bottom:1rem"><?= e($t['ind_video_hint']) ?></p>
             <video id="inductionVideo" src="/<?= e($type['video_path']) ?>" controls style="width:100%;border-radius:8px;background:#000"></video>
-            <form method="POST" style="margin-top:1.25rem">
+            <p id="videoWaitHint" style="text-align:center;font-size:.82rem;color:var(--gray-500);margin-top:.6rem;<?= $remainingSeconds <= 0 ? 'display:none' : '' ?>"></p>
+            <form method="POST" style="margin-top:.75rem">
                 <input type="hidden" name="csrf_token" value="<?= e($csrf) ?>">
                 <button type="submit" name="mark_video_done" id="videoNextBtn" class="btn btn-primary btn-full" disabled>
                     <?= icon('check') ?> <?= e($t['ind_btn_next']) ?>
                 </button>
             </form>
             <script>
-                var vid = document.getElementById('inductionVideo');
-                var btn = document.getElementById('videoNextBtn');
-                vid.addEventListener('ended', function () { btn.disabled = false; });
+                (function () {
+                    var vid    = document.getElementById('inductionVideo');
+                    var btn    = document.getElementById('videoNextBtn');
+                    var hint   = document.getElementById('videoWaitHint');
+                    var wait   = <?= (int)$remainingSeconds ?>;
+                    var template = <?= json_encode($t['ind_wait_hint']) ?>;
+                    var mediaReady = false;
+                    var timeReady  = wait <= 0;
+
+                    function maybeEnable() {
+                        if (mediaReady && timeReady) { btn.disabled = false; hint.style.display = 'none'; }
+                    }
+                    function tick() {
+                        if (wait <= 0) { timeReady = true; maybeEnable(); return; }
+                        hint.textContent = template.replace('%d', wait);
+                        wait--;
+                        setTimeout(tick, 1000);
+                    }
+                    vid.addEventListener('ended', function () { mediaReady = true; maybeEnable(); });
+                    if (!timeReady) tick();
+                })();
             </script>
 
         <?php elseif ($step === 'document'): ?>
             <?php if ($docTitle): ?><h3 style="margin-bottom:.75rem"><?= e($docTitle) ?></h3><?php endif; ?>
             <p style="color:var(--gray-500);margin-bottom:.75rem"><?= e($t['ind_doc_hint']) ?></p>
             <div id="docReader" class="doc-reader"><?= nl2br(e($docBody)) ?></div>
-            <form method="POST" style="margin-top:1.25rem">
+            <p id="docWaitHint" style="text-align:center;font-size:.82rem;color:var(--gray-500);margin-top:.6rem;<?= $remainingSeconds <= 0 ? 'display:none' : '' ?>"></p>
+            <form method="POST" style="margin-top:.75rem">
                 <input type="hidden" name="csrf_token" value="<?= e($csrf) ?>">
                 <button type="submit" name="mark_doc_done" id="docNextBtn" class="btn btn-primary btn-full" disabled>
                     <?= icon('check') ?> <?= e($t['ind_btn_next']) ?>
                 </button>
             </form>
             <script>
-                var reader = document.getElementById('docReader');
-                var dbtn   = document.getElementById('docNextBtn');
-                function checkScroll() {
-                    if (reader.scrollHeight <= reader.clientHeight + 4 ||
-                        reader.scrollTop + reader.clientHeight >= reader.scrollHeight - 10) {
-                        dbtn.disabled = false;
+                (function () {
+                    var reader = document.getElementById('docReader');
+                    var dbtn   = document.getElementById('docNextBtn');
+                    var hint   = document.getElementById('docWaitHint');
+                    var wait   = <?= (int)$remainingSeconds ?>;
+                    var template = <?= json_encode($t['ind_wait_hint']) ?>;
+                    var mediaReady = false;
+                    var timeReady  = wait <= 0;
+
+                    function maybeEnable() {
+                        if (mediaReady && timeReady) { dbtn.disabled = false; hint.style.display = 'none'; }
                     }
-                }
-                reader.addEventListener('scroll', checkScroll);
-                checkScroll();
+                    function checkScroll() {
+                        if (reader.scrollHeight <= reader.clientHeight + 4 ||
+                            reader.scrollTop + reader.clientHeight >= reader.scrollHeight - 10) {
+                            mediaReady = true;
+                            maybeEnable();
+                        }
+                    }
+                    function tick() {
+                        if (wait <= 0) { timeReady = true; maybeEnable(); return; }
+                        hint.textContent = template.replace('%d', wait);
+                        wait--;
+                        setTimeout(tick, 1000);
+                    }
+                    reader.addEventListener('scroll', checkScroll);
+                    checkScroll();
+                    if (!timeReady) tick();
+                })();
             </script>
 
         <?php elseif ($step === 'quiz'): ?>

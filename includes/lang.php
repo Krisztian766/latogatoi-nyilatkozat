@@ -39,6 +39,8 @@ return [
         'ind_change_type'     => 'Típus váltása',
         'field_position'      => 'Munkakör',
         'placeholder_position' => 'pl. Gépkezelő',
+        'ind_too_early'       => 'Kérjük, nézze/olvassa végig az anyagot, mielőtt továbblép.',
+        'ind_wait_hint'       => 'Folytatás %d másodperc múlva…',
     ],
     'en' => [
         'section_personal'    => 'Personal Information',
@@ -79,5 +81,7 @@ return [
         'ind_change_type'     => 'Change type',
         'field_position'      => 'Position',
         'placeholder_position' => 'e.g. Machine operator',
+        'ind_too_early'       => 'Please finish watching/reading the material before continuing.',
+        'ind_wait_hint'       => 'You can continue in %d seconds…',
     ],
 ];

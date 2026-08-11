@@ -32,16 +32,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !verifyCsrf($_POST['csrf_token'] ??
         $trainer_qual  = trim($_POST['trainer_qualification'] ?? '');
         $validity_days = trim($_POST['validity_days'] ?? '') !== '' ? max(1, (int)$_POST['validity_days']) : null;
         $show_position = !empty($_POST['show_position']) ? 1 : 0;
+        $show_company  = !empty($_POST['show_company']) ? 1 : 0;
+        $show_contact  = !empty($_POST['show_contact']) ? 1 : 0;
 
         if ($name_hu === '') {
             $error = 'A típus neve kötelező!';
         } else {
             $db->prepare('UPDATE visit_types SET name_hu=?, name_en=?, doc_title_hu=?, doc_title_en=?,
                            doc_content_hu=?, doc_content_en=?, quiz_pass_percent=?, is_active=?, sort_order=?,
-                           trainer_name=?, trainer_qualification=?, validity_days=?, show_position=? WHERE id=?')
+                           trainer_name=?, trainer_qualification=?, validity_days=?, show_position=?,
+                           show_company=?, show_contact=? WHERE id=?')
                ->execute([$name_hu, $name_en, $doc_title_hu, $doc_title_en,
                           $doc_content_hu, $doc_content_en, $pass_percent, $is_active, $sort_order,
-                          $trainer_name, $trainer_qual, $validity_days, $show_position, $id]);
+                          $trainer_name, $trainer_qual, $validity_days, $show_position,
+                          $show_company, $show_contact, $id]);
             logAudit('visit_type_updated', $id, $name_hu);
             $success = 'Adatok mentve!';
             $type = getVisitType($id);
@@ -299,9 +303,18 @@ if ($editQuestion) {
                     <input type="number" name="validity_days" min="1" value="<?= e($type['validity_days'] !== null ? (int)$type['validity_days'] : '') ?>" placeholder="pl. 365">
                     <small>Ha üres, az oktatás nem jár le. Tipikusan 365 nap (évenkénti ismétlés).</small>
                 </div>
+                <h4 style="margin:1rem 0 .5rem">Űrlapmezők ennél a típusnál</h4>
                 <label class="checkbox-label" style="margin-bottom:.5rem">
                     <input type="checkbox" name="show_position" value="1" <?= !empty($type['show_position']) ? 'checked' : '' ?>>
-                    <span>Munkakör mező megjelenítése az űrlapon (új munkavállalóknak — a Cég mező mellett)</span>
+                    <span>Munkakör mező megjelenítése (pl. új munkavállalóknak)</span>
+                </label>
+                <label class="checkbox-label" style="margin-bottom:.5rem">
+                    <input type="checkbox" name="show_company" value="1" <?= ($type['show_company'] ?? 1) ? 'checked' : '' ?>>
+                    <span>Cég mező megjelenítése (kapcsold ki, ha nem releváns — pl. saját dolgozónak)</span>
+                </label>
+                <label class="checkbox-label" style="margin-bottom:.5rem">
+                    <input type="checkbox" name="show_contact" value="1" <?= ($type['show_contact'] ?? 1) ? 'checked' : '' ?>>
+                    <span>Kapcsolattartó mező megjelenítése (kapcsold ki, ha nem releváns — pl. saját dolgozónak)</span>
                 </label>
                 <label class="checkbox-label" style="margin-bottom:1rem">
                     <input type="checkbox" name="is_active" value="1" <?= $type['is_active'] ? 'checked' : '' ?>>

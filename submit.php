@@ -10,7 +10,13 @@ if (!inductionSatisfied()) {
     header('Location: /induction.php?lang=' . ($_SESSION['lang'] ?? 'hu'));
     exit;
 }
-$induction = $_SESSION['induction'] ?? null;
+$induction     = $_SESSION['induction'] ?? null;
+$inductionType = !empty($induction['visit_type_id']) ? getVisitType((int)$induction['visit_type_id']) : null;
+// A field is only required if it's actually shown — index.php hides it
+// the same way, but a hostile client could still POST straight to this
+// endpoint, so the same "is it required" decision is re-derived here
+// server-side rather than trusted from the client.
+$requireContact = !$inductionType || !empty($inductionType['show_contact']);
 
 $name           = trim($_POST['name'] ?? '');
 $company        = trim($_POST['company'] ?? '');
@@ -20,7 +26,7 @@ $visit_date     = trim($_POST['visit_date'] ?? date('Y-m-d'));
 $signature_data = trim($_POST['signature_data'] ?? '');
 $gdpr_accepted  = !empty($_POST['gdpr_consent']) ? 1 : 0;
 
-if (empty($name) || empty($contact)) {
+if (empty($name) || ($requireContact && empty($contact))) {
     header('Location: /?error=missing_fields&company=' . urlencode($company) . '&position=' . urlencode($position));
     exit;
 }
@@ -47,11 +53,8 @@ $ip        = getClientIp();
 // retraining interval changes afterward, already-issued certificates keep
 // reflecting what was actually true at the time they were issued.
 $trainingValidUntil = null;
-if (!empty($induction['visit_type_id'])) {
-    $inductionType = getVisitType((int)$induction['visit_type_id']);
-    if ($inductionType && !empty($inductionType['validity_days'])) {
-        $trainingValidUntil = date('Y-m-d', strtotime("+{$inductionType['validity_days']} days"));
-    }
+if ($inductionType && !empty($inductionType['validity_days'])) {
+    $trainingValidUntil = date('Y-m-d', strtotime("+{$inductionType['validity_days']} days"));
 }
 
 try {

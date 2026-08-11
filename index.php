@@ -24,6 +24,8 @@ if (!inductionSatisfied()) {
 
 $currentVt    = !empty($_SESSION['induction']['visit_type_id']) ? getVisitType((int)$_SESSION['induction']['visit_type_id']) : null;
 $showPosition = $currentVt && !empty($currentVt['show_position']);
+$showCompany  = !$currentVt || !empty($currentVt['show_company']);
+$showContact  = !$currentVt || !empty($currentVt['show_contact']);
 
 $csrf     = generateCsrf();
 $today    = date('Y-m-d');
@@ -146,12 +148,14 @@ $langParam = '?lang=' . $lang;
                        placeholder="<?= e($t['placeholder_name']) ?>"
                        value="<?= e($_GET['name'] ?? '') ?>">
             </div>
+            <?php if ($showCompany): ?>
             <div class="form-group">
                 <label for="company"><?= e($fCompany) ?></label>
                 <input type="text" id="company" name="company"
                        placeholder="<?= e($t['placeholder_company']) ?>"
                        value="<?= e($_GET['company'] ?? '') ?>">
             </div>
+            <?php endif; ?>
             <?php if ($showPosition): ?>
             <div class="form-group">
                 <label for="position"><?= e($t['field_position']) ?></label>
@@ -160,6 +164,7 @@ $langParam = '?lang=' . $lang;
                        value="<?= e($_GET['position'] ?? '') ?>">
             </div>
             <?php endif; ?>
+            <?php if ($showContact): ?>
             <div class="form-group">
                 <label for="contact"><?= e($fContact) ?> <span class="required">*</span></label>
                 <input type="text" id="contact" name="contact" required list="contactList"
@@ -171,6 +176,7 @@ $langParam = '?lang=' . $lang;
                     <?php endforeach; ?>
                 </datalist>
             </div>
+            <?php endif; ?>
 
             <p class="section-label"><?= e($t['section_declaration']) ?></p>
             <div class="declaration-box">
