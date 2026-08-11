@@ -11,6 +11,12 @@ $lang = $_SESSION['lang'] ?? 'hu';
 $allT = require __DIR__ . '/includes/lang.php';
 $t    = $allT[$lang];
 
+if (isset($_GET['change_type'])) {
+    unset($_SESSION['induction']);
+    header('Location: /induction.php?lang=' . $lang);
+    exit;
+}
+
 if (!inductionSatisfied()) {
     header('Location: /induction.php?lang=' . $lang);
     exit;
@@ -84,6 +90,11 @@ $langParam = '?lang=' . $lang;
                 <p class="visit-type-badge">
                     <?= icon('check') ?>
                     <?= e($lang === 'en' && trim($currentVt['name_en']) !== '' ? $currentVt['name_en'] : $currentVt['name_hu']) ?>
+                    <?php if (count(getActiveVisitTypes()) > 1): ?>
+                        <a href="/?change_type=1&lang=<?= $lang ?>" class="visit-type-change">
+                            <?= e($t['ind_change_type']) ?>
+                        </a>
+                    <?php endif; ?>
                 </p>
             <?php endif; ?>
         <?php endif; ?>

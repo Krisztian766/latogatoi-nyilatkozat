@@ -36,6 +36,7 @@ return [
         'ind_quiz_retry'      => 'Újrapróbálkozás',
         'ind_required'        => 'Kötelező megválaszolni!',
         'ind_btn_back'        => 'Vissza: %s',
+        'ind_change_type'     => 'Típus váltása',
     ],
     'en' => [
         'section_personal'    => 'Personal Information',
@@ -73,5 +74,6 @@ return [
         'ind_quiz_retry'      => 'Try again',
         'ind_required'        => 'This field is required!',
         'ind_btn_back'        => 'Back: %s',
+        'ind_change_type'     => 'Change type',
     ],
 ];

@@ -11,6 +11,12 @@ $allT = require __DIR__ . '/includes/lang.php';
 $t    = $allT[$lang];
 $csrf = generateCsrf();
 
+if (isset($_GET['change_type'])) {
+    unset($_SESSION['induction']);
+    header('Location: /induction.php?lang=' . $lang);
+    exit;
+}
+
 $types = getActiveVisitTypes();
 if (empty($types)) { header('Location: /'); exit; }
 
@@ -173,6 +179,14 @@ $docBody  = $lang === 'en' && trim((string)$type['doc_content_en']) !== '' ? $ty
             <?php endforeach; ?>
         </div>
         <h2 style="text-align:center;margin:1rem 0 1.5rem"><?= e($typeName) ?></h2>
+
+        <?php if (count($types) > 1): ?>
+            <p style="text-align:center;margin-bottom:1rem">
+                <a href="/induction.php?change_type=1&lang=<?= $lang ?>" class="visit-type-change">
+                    <?= icon('arrow-left') ?> <?= e($t['ind_change_type']) ?>
+                </a>
+            </p>
+        <?php endif; ?>
 
         <?php if ($stepIndex > 0): ?>
             <?php $prevStep = $steps[$stepIndex - 1]; ?>

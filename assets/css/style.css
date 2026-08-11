@@ -1098,6 +1098,18 @@ h3 {
     margin-bottom: 1.25rem;
 }
 
+.visit-type-change {
+    color: var(--gray-500);
+    text-decoration: underline;
+    font-weight: 500;
+    font-size: .8rem;
+    margin-left: .3rem;
+}
+
+.visit-type-change:hover {
+    color: var(--navy);
+}
+
 .visit-type-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
