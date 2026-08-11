@@ -57,6 +57,7 @@ if (!$ind) {
     </div>
     <div class="container">
         <div class="form-card">
+            <img src="/assets/logo.png" alt="Logo" class="picker-hero-logo">
             <h2 style="text-align:center;margin-bottom:1.5rem"><?= e($t['ind_choose_type']) ?></h2>
             <div class="visit-type-grid">
                 <?php foreach ($types as $vt): ?>

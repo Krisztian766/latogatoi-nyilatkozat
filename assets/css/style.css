@@ -67,6 +67,15 @@ body {
     object-fit: contain;
 }
 
+.picker-hero-logo {
+    display: block;
+    max-height: 110px;
+    max-width: 320px;
+    width: 100%;
+    object-fit: contain;
+    margin: 0 auto 1.5rem;
+}
+
 /* ── Language switcher ── */
 .lang-switcher { display: flex; gap: .35rem; }
 
