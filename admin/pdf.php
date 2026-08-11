@@ -93,15 +93,7 @@ $visitType = !empty($d['visit_type_id']) ? getVisitType((int)$d['visit_type_id']
             filter: brightness(0) invert(1);
         }
 
-        .doc-header .logo .company-name {
-            display: block;
-            margin-top: 6px;
-            font-size: 7.5pt;
-            font-weight: 700;
-            letter-spacing: .08em;
-            text-transform: uppercase;
-            color: rgba(255,255,255,.75);
-        }
+        <?= pdfCompanyNameCss() ?>
 
         .doc-header .doc-title {
             text-align: right;

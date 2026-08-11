@@ -77,7 +77,10 @@ function validateGateCookie(string $cookie): bool {
 // Only ever redirect back to a same-site relative path (blocks //host and
 // scheme-based open-redirect payloads via the gate's ?return= parameter).
 function safeReturnPath(string $path): string {
-    if ($path === '' || $path[0] !== '/' || (isset($path[1]) && $path[1] === '/')) {
+    // Browsers normalize a leading "/\" the same as "//" for http(s) URLs,
+    // treating it as a protocol-relative absolute URL — so both must be
+    // blocked, not just "//", or this becomes an open redirect.
+    if ($path === '' || $path[0] !== '/' || (isset($path[1]) && ($path[1] === '/' || $path[1] === '\\'))) {
         return '/';
     }
     return $path;
@@ -247,6 +250,22 @@ function getClientIp(): string {
     return $_SERVER['REMOTE_ADDR'] ?? '';
 }
 
+// Shared between admin/pdf.php and admin/pdf_bulk.php, which are otherwise
+// independent standalone print documents (each needs its own full <style>
+// block for printing), so this one rule can't silently drift out of sync
+// between the single and bulk PDF exports the way a copy-pasted block could.
+function pdfCompanyNameCss(): string {
+    return '.doc-header .logo .company-name {
+            display: block;
+            margin-top: 6px;
+            font-size: 7.5pt;
+            font-weight: 700;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,.75);
+        }';
+}
+
 function loadPdfBrandingSettings(): array {
     $paraHu = [];
     $paraEn = [];
@@ -335,6 +354,16 @@ function scoreQuiz(int $visitTypeId, array $answers): array {
 
 function videoUploadDir(): string {
     return __DIR__ . '/../uploads/videos/';
+}
+
+// Rough minimum server-side dwell time before a document-read step can be
+// marked done — a skim-reading allowance (not full careful-reading speed),
+// floored at 5s. This is a backstop against instantly POSTing mark_doc_done
+// without ever viewing the page (e.g. via devtools), not a precise read-time
+// measurement; the real UX gate is the client-side scroll-to-bottom check.
+function minReadSeconds(string $text): int {
+    $words = str_word_count(strip_tags($text));
+    return max(5, (int)ceil($words / 200 * 60 * 0.35));
 }
 
 // Server-side re-check of induction completeness — index.php uses this to

@@ -90,8 +90,12 @@ if (!$type) { unset($_SESSION['induction']); header('Location: /induction.php');
 
 $questions = getQuizQuestions((int)$type['id']);
 $hasVideo  = !empty($type['video_path']);
-$hasDoc    = trim((string)($lang === 'en' ? $type['doc_content_en'] : $type['doc_content_hu'])) !== ''
-             || trim((string)$type['doc_content_hu']) !== '';
+// Matches inductionSatisfied()'s check exactly: content in EITHER language
+// counts, regardless of which language the visitor is currently viewing —
+// otherwise a visit type with only-English (or only-Hungarian) content
+// causes this page and index.php to disagree on whether a document step
+// exists, producing an infinite redirect loop between the two.
+$hasDoc    = trim((string)$type['doc_content_hu']) !== '' || trim((string)$type['doc_content_en']) !== '';
 $hasQuiz   = count($questions) > 0;
 
 $quizError  = '';
@@ -101,13 +105,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!verifyCsrf($_POST['csrf_token'] ?? '')) {
         // ignore silently, just re-render the current step
     } elseif (isset($_POST['mark_video_done'])) {
-        $_SESSION['induction']['video_done'] = true;
-        header('Location: /induction.php?lang=' . $lang);
-        exit;
+        // Backstop against instantly POSTing this without the video ever
+        // playing (e.g. via devtools): require a minimum elapsed time since
+        // the video step was first shown. Not a real watch-time proof — the
+        // 'ended' event driving the button is the primary gate — but it
+        // closes the trivial one-request bypass.
+        $startedAt = $_SESSION['induction']['step_started_at']['video'] ?? 0;
+        if (time() - $startedAt >= 5) {
+            $_SESSION['induction']['video_done'] = true;
+            header('Location: /induction.php?lang=' . $lang);
+            exit;
+        }
+        // else: fall through and re-render the video step unmarked
     } elseif (isset($_POST['mark_doc_done'])) {
-        $_SESSION['induction']['doc_done'] = true;
-        header('Location: /induction.php?lang=' . $lang);
-        exit;
+        $docText = $lang === 'en' && trim((string)$type['doc_content_en']) !== '' ? $type['doc_content_en'] : $type['doc_content_hu'];
+        $startedAt = $_SESSION['induction']['step_started_at']['document'] ?? 0;
+        if (time() - $startedAt >= minReadSeconds((string)$docText)) {
+            $_SESSION['induction']['doc_done'] = true;
+            header('Location: /induction.php?lang=' . $lang);
+            exit;
+        }
     } elseif (isset($_POST['go_back'])) {
         // Lets a visitor who can't answer the quiz jump back to re-watch/re-read
         // the previous step. Only clears that one step's flag — earlier steps
@@ -115,8 +132,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $target = $_POST['target_step'] ?? '';
         if ($target === 'video') {
             $_SESSION['induction']['video_done'] = false;
+            unset($_SESSION['induction']['step_started_at']['video']);
         } elseif ($target === 'document') {
             $_SESSION['induction']['doc_done'] = false;
+            unset($_SESSION['induction']['step_started_at']['document']);
         }
         header('Location: /induction.php?lang=' . $lang);
         exit;
@@ -146,6 +165,11 @@ if ($hasVideo && empty($_SESSION['induction']['video_done'])) {
 } else {
     header('Location: /?lang=' . $lang);
     exit;
+}
+
+// Start the dwell-time clock for this step the first time it's actually shown.
+if (($step === 'video' || $step === 'document') && empty($_SESSION['induction']['step_started_at'][$step])) {
+    $_SESSION['induction']['step_started_at'][$step] = time();
 }
 
 $steps = [];

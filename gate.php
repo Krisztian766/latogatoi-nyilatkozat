@@ -14,7 +14,9 @@ $maxAttempts = 5;
 $lockMinutes = 15;
 $ip          = getClientIp();
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !verifyCsrf($_POST['csrf_token'] ?? '')) {
+    $error = 'Érvénytelen kérés. Próbálja újra.';
+} elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $db = getDB();
 
@@ -47,6 +49,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Adatbázis hiba! / Database error!';
     }
 }
+
+$csrf = generateCsrf();
 ?>
 <!DOCTYPE html>
 <html lang="hu">
@@ -69,6 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="alert alert-error"><?= e($error) ?></div>
         <?php endif; ?>
         <form method="POST">
+            <input type="hidden" name="csrf_token" value="<?= e($csrf) ?>">
             <div class="form-group">
                 <label>Jelszó / Password:</label>
                 <input type="password" name="password" required autocomplete="current-password" autofocus>
