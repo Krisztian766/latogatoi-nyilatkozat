@@ -5,6 +5,13 @@ requireSiteAccess();
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') { header('Location: /'); exit; }
 if (!verifyCsrf($_POST['csrf_token'] ?? '')) { header('Location: /?error=missing_fields'); exit; }
 
+if (!inductionSatisfied()) {
+    if (session_status() === PHP_SESSION_NONE) session_start();
+    header('Location: /induction.php?lang=' . ($_SESSION['lang'] ?? 'hu'));
+    exit;
+}
+$induction = $_SESSION['induction'] ?? null;
+
 $name           = trim($_POST['name'] ?? '');
 $company        = trim($_POST['company'] ?? '');
 $contact        = trim($_POST['contact'] ?? '');
@@ -45,9 +52,14 @@ try {
         exit;
     }
 
-    $db->prepare('INSERT INTO declarations (name, company, contact, visit_date, signature_data, gdpr_accepted, gdpr_accepted_at, data_hash, ip_address, expires_at)
-                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-       ->execute([$name, $company, $contact, $visit_date, $signature_data,
+    $db->prepare('INSERT INTO declarations
+                  (name, company, contact, visit_type_id, quiz_score, quiz_total, quiz_passed,
+                   visit_date, signature_data, gdpr_accepted, gdpr_accepted_at, data_hash, ip_address, expires_at)
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+       ->execute([$name, $company, $contact,
+                  $induction['visit_type_id'] ?? null, $induction['quiz_score'] ?? null,
+                  $induction['quiz_total'] ?? null, isset($induction['quiz_passed']) ? (int)$induction['quiz_passed'] : null,
+                  $visit_date, $signature_data,
                   $gdpr_accepted, $gdpr_accepted ? date('Y-m-d H:i:s') : null,
                   $dataHash, $ip, $expiresAt]);
     $id = $db->lastInsertId();
@@ -56,6 +68,10 @@ try {
         'id' => $id, 'name' => $name, 'company' => $company,
         'contact' => $contact, 'visit_date' => $visit_date, 'gdpr_accepted' => $gdpr_accepted,
     ]);
+
+    // Clear the induction state so the next visitor on this shared kiosk device
+    // has to complete the video/document/quiz again rather than inheriting it.
+    unset($_SESSION['induction']);
 
     header('Location: /?success=1');
     exit;

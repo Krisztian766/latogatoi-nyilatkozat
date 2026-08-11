@@ -277,6 +277,91 @@ function loadPdfBrandingSettings(): array {
     ];
 }
 
+// ── Induction flow: visit types (video + document + quiz) ──────────────────
+// A visit type bundles an optional safety video, an optional long-form
+// document, and an optional quiz gating entry. If no active visit type
+// exists, index.php falls back to the original single-form flow untouched.
+
+function getActiveVisitTypes(): array {
+    return getDB()->query('SELECT * FROM visit_types WHERE is_active = 1 ORDER BY sort_order, id')->fetchAll();
+}
+
+function getVisitType(int $id): ?array {
+    $stmt = getDB()->prepare('SELECT * FROM visit_types WHERE id = ?');
+    $stmt->execute([$id]);
+    $row = $stmt->fetch();
+    return $row ?: null;
+}
+
+function getQuizQuestions(int $visitTypeId): array {
+    $db = getDB();
+    $qStmt = $db->prepare('SELECT * FROM quiz_questions WHERE visit_type_id = ? ORDER BY sort_order, id');
+    $qStmt->execute([$visitTypeId]);
+    $questions = $qStmt->fetchAll();
+
+    $oStmt = $db->prepare('SELECT * FROM quiz_options WHERE question_id = ? ORDER BY sort_order, id');
+    foreach ($questions as &$q) {
+        $oStmt->execute([$q['id']]);
+        $q['options'] = $oStmt->fetchAll();
+    }
+    unset($q);
+    return $questions;
+}
+
+// $answers: [question_id => selected_option_id]. Scored purely server-side
+// against the DB so a visitor can never influence their own score by editing
+// client-side HTML/JS — the quiz page never sends is_correct to the browser.
+function scoreQuiz(int $visitTypeId, array $answers): array {
+    $questions = getQuizQuestions($visitTypeId);
+    $total     = count($questions);
+    $score     = 0;
+
+    foreach ($questions as $q) {
+        $selected = (int)($answers[$q['id']] ?? 0);
+        foreach ($q['options'] as $opt) {
+            if ((int)$opt['id'] === $selected && (int)$opt['is_correct'] === 1) {
+                $score++;
+                break;
+            }
+        }
+    }
+
+    $visitType = getVisitType($visitTypeId);
+    $threshold = $visitType ? (int)$visitType['quiz_pass_percent'] : 100;
+    $percent   = $total > 0 ? ($score / $total) * 100 : 100;
+
+    return ['score' => $score, 'total' => $total, 'passed' => $percent >= $threshold];
+}
+
+function videoUploadDir(): string {
+    return __DIR__ . '/../uploads/videos/';
+}
+
+// Server-side re-check of induction completeness — index.php uses this to
+// decide whether to redirect into induction.php, and submit.php uses it
+// again right before writing to the DB so the gate can't be bypassed by
+// POSTing straight to submit.php.
+function inductionSatisfied(): bool {
+    $activeTypes = getActiveVisitTypes();
+    if (empty($activeTypes)) return true; // feature not configured, nothing to satisfy
+
+    if (session_status() === PHP_SESSION_NONE) session_start();
+    $ind = $_SESSION['induction'] ?? null;
+    if (!$ind) return false;
+
+    $type = getVisitType((int)$ind['visit_type_id']);
+    if (!$type || !in_array((int)$type['id'], array_column($activeTypes, 'id'), true)) return false;
+
+    $hasVideo = !empty($type['video_path']);
+    $hasDoc   = trim((string)$type['doc_content_hu']) !== '' || trim((string)$type['doc_content_en']) !== '';
+    $hasQuiz  = count(getQuizQuestions((int)$type['id'])) > 0;
+
+    if ($hasVideo && empty($ind['video_done']))  return false;
+    if ($hasDoc   && empty($ind['doc_done']))    return false;
+    if ($hasQuiz  && empty($ind['quiz_passed'])) return false;
+    return true;
+}
+
 function getRetentionDate(): string {
     $days = max(30, (int)getSetting('retention_days', '730'));
     return date('Y-m-d', strtotime("+{$days} days"));

@@ -13,6 +13,7 @@
         <a href="/admin/dashboard.php" <?= str_contains($uri,'dashboard') ? 'class="active"':'' ?>><?= icon('document') ?> Nyilatkozatok</a>
         <a href="/admin/new.php"       <?= str_contains($uri,'/new')      ? 'class="active"':'' ?>><?= icon('plus') ?> Új</a>
         <a href="/admin/documents.php" <?= str_contains($uri,'document')  ? 'class="active"':'' ?>><?= icon('folder') ?> Dokumentumok</a>
+        <a href="/admin/visit_types.php" <?= str_contains($uri,'visit_type') ? 'class="active"':'' ?>><?= icon('list') ?> Oktatás típusok</a>
         <a href="/admin/audit.php"     <?= str_contains($uri,'audit')     ? 'class="active"':'' ?>><?= icon('list') ?> Audit napló</a>
         <a href="/admin/settings.php"  <?= str_contains($uri,'settings')  ? 'class="active"':'' ?>><?= icon('gear') ?> Beállítások</a>
         <a href="/admin/users.php"     <?= str_contains($uri,'users')     ? 'class="active"':'' ?>><?= icon('users') ?> Felhasználók</a>

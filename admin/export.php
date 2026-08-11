@@ -18,7 +18,11 @@ if ($from !== '') { $where[] = 'visit_date >= ?'; $params[] = $from; }
 if ($to   !== '') { $where[] = 'visit_date <= ?'; $params[] = $to; }
 $whereSQL = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 
-$stmt = $db->prepare("SELECT id, name, company, contact, visit_date, created_at FROM declarations {$whereSQL} ORDER BY created_at DESC");
+$stmt = $db->prepare("SELECT d.id, d.name, d.company, d.contact, d.visit_date, d.created_at,
+                              d.quiz_score, d.quiz_total, d.quiz_passed, vt.name_hu AS visit_type_name
+                       FROM declarations d
+                       LEFT JOIN visit_types vt ON vt.id = d.visit_type_id
+                       {$whereSQL} ORDER BY d.created_at DESC");
 $stmt->execute($params);
 $rows = $stmt->fetchAll();
 
@@ -41,14 +45,19 @@ $csvSafe = function ($value) {
     return $value;
 };
 
-fputcsv($out, ['ID', 'Név / Name', 'Cég / Company', 'Kapcsolattartó / Contact', 'Látogatás dátuma / Visit Date', 'Beküldve / Submitted At'], ';');
+fputcsv($out, ['ID', 'Név / Name', 'Cég / Company', 'Kapcsolattartó / Contact', 'Típus / Type', 'Teszt eredmény / Quiz result', 'Látogatás dátuma / Visit Date', 'Beküldve / Submitted At'], ';');
 
 foreach ($rows as $r) {
+    $quizResult = $r['quiz_total'] !== null
+        ? $r['quiz_score'] . '/' . $r['quiz_total'] . ' (' . ($r['quiz_passed'] ? 'sikeres' : 'sikertelen') . ')'
+        : '';
     fputcsv($out, [
         $r['id'],
         $csvSafe($r['name']),
         $csvSafe($r['company']),
         $csvSafe($r['contact']),
+        $csvSafe((string)$r['visit_type_name']),
+        $quizResult,
         $r['visit_date'],
         $r['created_at'],
     ], ';');

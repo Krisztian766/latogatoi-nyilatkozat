@@ -16,6 +16,7 @@ if (!$d) {
 logAudit('view', $id, $d['name']);
 
 $hashOk   = !empty($d['data_hash']) ? verifyHash($d) : null;
+$visitType = !empty($d['visit_type_id']) ? getVisitType((int)$d['visit_type_id']) : null;
 $fName    = getSetting('field_name_label_hu',    'Név / Name');
 $fCompany = getSetting('field_company_label_hu', 'Képviselt Cég / Company');
 $fContact = getSetting('field_contact_label_hu', 'Helyi kapcsolattartó');
@@ -87,6 +88,16 @@ for ($i = 1; $i <= 4; $i++) {
                     <?php $expired = $d['expires_at'] < date('Y-m-d'); ?>
                     <span class="compliance-badge <?= $expired ? 'badge-warn' : 'badge-gray' ?>">
                         <?= $expired ? icon('warning') : icon('calendar') ?> <?= $expired ? 'Lejárt' : 'Lejár' ?>: <?= e($d['expires_at']) ?>
+                    </span>
+                <?php endif; ?>
+
+                <?php if ($visitType): ?>
+                    <span class="compliance-badge badge-gray"><?= icon('document') ?> Típus: <?= e($visitType['name_hu']) ?></span>
+                <?php endif; ?>
+                <?php if ($d['quiz_total'] !== null): ?>
+                    <span class="compliance-badge <?= $d['quiz_passed'] ? 'badge-ok' : 'badge-warn' ?>">
+                        <?= $d['quiz_passed'] ? icon('check') : icon('warning') ?>
+                        Teszt: <?= (int)$d['quiz_score'] ?>/<?= (int)$d['quiz_total'] ?> (<?= $d['quiz_passed'] ? 'sikeres' : 'sikertelen' ?>)
                     </span>
                 <?php endif; ?>
             </div>

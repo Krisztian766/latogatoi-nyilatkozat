@@ -11,6 +11,11 @@ $lang = $_SESSION['lang'] ?? 'hu';
 $allT = require __DIR__ . '/includes/lang.php';
 $t    = $allT[$lang];
 
+if (!inductionSatisfied()) {
+    header('Location: /induction.php?lang=' . $lang);
+    exit;
+}
+
 $csrf     = generateCsrf();
 $today    = date('Y-m-d');
 $today_hu = $lang === 'hu' ? date('Y. m. d.') : date('d/m/Y');
@@ -72,6 +77,16 @@ $langParam = '?lang=' . $lang;
 
 <div class="container">
     <div class="form-card">
+
+        <?php if (!isset($_GET['success']) && !empty($_SESSION['induction']['visit_type_id'])): ?>
+            <?php $currentVt = getVisitType((int)$_SESSION['induction']['visit_type_id']); ?>
+            <?php if ($currentVt): ?>
+                <p class="visit-type-badge">
+                    <?= icon('check') ?>
+                    <?= e($lang === 'en' && trim($currentVt['name_en']) !== '' ? $currentVt['name_en'] : $currentVt['name_hu']) ?>
+                </p>
+            <?php endif; ?>
+        <?php endif; ?>
 
         <?php if (isset($_GET['success'])): ?>
             <div class="alert alert-success">

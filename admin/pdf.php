@@ -11,6 +11,7 @@ $d    = $stmt->fetch();
 if (!$d) { header('Location: /admin/dashboard.php'); exit; }
 
 extract(loadPdfBrandingSettings());
+$visitType = !empty($d['visit_type_id']) ? getVisitType((int)$d['visit_type_id']) : null;
 ?>
 <!DOCTYPE html>
 <html lang="hu">
@@ -388,6 +389,19 @@ extract(loadPdfBrandingSettings());
                 <p style="color:#9CA3AF;font-style:italic">Nincs megadva nyilatkozat szöveg.</p>
             <?php endif; ?>
         </div>
+
+        <?php if ($visitType || $d['quiz_total'] !== null): ?>
+        <div class="section-head">Oktatás / Induction</div>
+        <table class="info-table">
+            <?php if ($visitType): ?>
+            <tr><td class="lbl">Típus</td><td class="val"><?= e($visitType['name_hu']) ?></td></tr>
+            <?php endif; ?>
+            <?php if ($d['quiz_total'] !== null): ?>
+            <tr><td class="lbl">Ellenőrző teszt</td>
+                <td class="val"><?= (int)$d['quiz_score'] ?>/<?= (int)$d['quiz_total'] ?> — <?= $d['quiz_passed'] ? 'sikeres' : 'sikertelen' ?></td></tr>
+            <?php endif; ?>
+        </table>
+        <?php endif; ?>
 
         <!-- Signature -->
         <div class="section-head">Aláírás / Signature</div>

@@ -53,7 +53,11 @@ $countStmt->execute($params);
 $total      = (int)$countStmt->fetchColumn();
 $totalPages = max(1, (int)ceil($total / $perPage));
 
-$listStmt = $db->prepare("SELECT id, name, company, contact, visit_date, created_at FROM declarations {$whereSQL} ORDER BY created_at DESC LIMIT {$perPage} OFFSET {$offset}");
+$listStmt = $db->prepare("SELECT d.id, d.name, d.company, d.contact, d.visit_date, d.created_at,
+                                  d.quiz_score, d.quiz_total, d.quiz_passed, vt.name_hu AS visit_type_name
+                           FROM declarations d
+                           LEFT JOIN visit_types vt ON vt.id = d.visit_type_id
+                           {$whereSQL} ORDER BY d.created_at DESC LIMIT {$perPage} OFFSET {$offset}");
 $listStmt->execute($params);
 $rows = $listStmt->fetchAll();
 ?>
@@ -137,6 +141,7 @@ $rows = $listStmt->fetchAll();
                     <th>Név / Name</th>
                     <th>Cég / Company</th>
                     <th>Kapcsolattartó</th>
+                    <th>Típus / teszt</th>
                     <th>Dátum</th>
                     <th>Beküldve</th>
                     <th>Műveletek</th>
@@ -149,6 +154,18 @@ $rows = $listStmt->fetchAll();
                     <td><strong><?= e($r['name']) ?></strong></td>
                     <td><?= e($r['company']) ?></td>
                     <td><?= e($r['contact']) ?></td>
+                    <td>
+                        <?php if ($r['visit_type_name']): ?>
+                            <div><?= e($r['visit_type_name']) ?></div>
+                            <?php if ($r['quiz_total'] !== null): ?>
+                                <span class="compliance-badge <?= $r['quiz_passed'] ? 'badge-ok' : 'badge-warn' ?>" style="font-size:.7rem;padding:.15rem .5rem">
+                                    <?= (int)$r['quiz_score'] ?>/<?= (int)$r['quiz_total'] ?>
+                                </span>
+                            <?php endif; ?>
+                        <?php else: ?>
+                            <span style="color:var(--gray-500)">–</span>
+                        <?php endif; ?>
+                    </td>
                     <td><?= e($r['visit_date']) ?></td>
                     <td><?= e(substr($r['created_at'], 0, 16)) ?></td>
                     <td class="actions">
